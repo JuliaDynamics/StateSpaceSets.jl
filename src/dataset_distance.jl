@@ -1,4 +1,6 @@
-export dataset_distance, Hausdorff, datasets_sets_distances
+export dataset_distance, datasets_sets_distances
+export Centroid, Hausdorff, StrictlyMinimumDistance
+
 ###########################################################################################
 # Dataset distance
 ###########################################################################################
@@ -6,57 +8,33 @@ export dataset_distance, Hausdorff, datasets_sets_distances
     dataset_distance(dataset1, dataset2 [, method])
 Calculate a distance between two `AbstractDatasets`,
 i.e., a distance defined between sets of points, as dictated by `method`.
-`method` defaults to `Euclidean()`.
 
-## Description
-If `method isa Metric` from Distances.jl, then the distance is the minimum
-distance of all the distances from a point in one set to the closest point in
-the other set. The distance is calculated with the given metric.
-In this case there is an internal heuristic: if `length(dataset1)*length(dataset2) ≥ 1000`
-the algorithm switches to a KDTree-based version, otherwise it uses brute force.
-You can overwrite this by explicitly setting the `brute` boolean keyword
-or calling `dataset_distance_brute` directly.
-
-`method` can also be [`Hausdorff`](@ref) (a name provided by this module).
+The possible `methods` are:
+- [`Centroid`](@ref), which is the default
+- [`Hausdorff`](@ref)
+- [`StrictlyMinimumDistance`](@ref)
 """
-function dataset_distance(d1, d2::AbstractDataset, metric::Metric = Euclidean();
-    brute = length(d1)*length(d2) ≤ 10000)
-    if brute
-        return dataset_distance_brute(d1, d2, metric)
-    else
-        tree = KDTree(d2, metric)
-        return dataset_distance(d1, tree)
-    end
-end
+dataset_distance(d1, d2) = dataset_distance(d1, d2, Centroid())
 
-function dataset_distance(d1, tree::KDTree)
-    # Notice that it is faster to do a bulksearch of all points in `d1`
-    # rather than use the internal inplace method `NearestNeighbors.knn_point!`.
-    _, vec_of_ds = bulksearch(tree, d1, NeighborNumber(1))
-    return minimum(vec_of_ds)[1]
-    # For future benchmarking reasons, we leave the code here
-    # ε = eltype(d1)(Inf)
-    # dist, idx = [ε], [0]
-    # for p in d1 # iterate over all points of dataset
-    #     Neighborhood.NearestNeighbors.knn_point!(
-    #         tree, p, false, dist, idx, Neighborhood.NearestNeighbors.always_false
-    #     )
-    #     @inbounds dist[1] < ε && (ε = dist[1])
-    # end
-    return ε
-end
+"""
+    Centroid(metric = Euclidean())
+A dataset distance that can be used in [`dataset_distance`](@ref).
+The `Centroid` method returns the distance (according to `metric`) between the
+[centroids](https://en.wikipedia.org/wiki/Centroid) (a.k.a. center of mass) of the datasets.
 
-function dataset_distance_brute(d1, d2::AbstractDataset, metric = Euclidean())
-    ε = eltype(d2)(Inf)
-    for x ∈ d1
-        for y ∈ d2
-            εnew = metric(x, y)
-            εnew < ε && (ε = εnew)
-        end
-    end
-    return ε
+Besides giving as `metric` an instance from Distances.jl, you can give any function that
+takes in two static vectors are returns a positive definite number to use as a distance.
+"""
+struct Centroid{M}
+    metric::M
 end
+Centroid() = Centroid(Euclidean())
 
+function dataset_distance(d1::AbstractDataset, d2::AbstractDataset, c::Centroid)
+    c1, c2 = centroid(d1), centroid(d2)
+    return  c.metric(c1, c2)
+end
+centroid(A::AbstractDataset) = sum(A)/length(A)
 
 """
     Hausdorff(metric = Euclidean())
@@ -86,6 +64,62 @@ function dataset_distance(d1::AbstractDataset, d2, h::Hausdorff,
     return max(max_d12, max_d21)
 end
 
+"""
+    StrictlyMinimumDistance([brute = false,] [metric = Euclidean(),])
+A dataset distance that can be used in [`dataset_distance`](@ref).
+The `StrictlyMinimumDistance` returns the minimum distance of all the distances from a
+point in one set to the closest point in the other set.
+The distance is calculated with the given metric.
+
+The `brute = false` argument switches the computation between a KDTree-based version,
+or brute force (i.e., calculation of all distances and picking the smallest one).
+Brute approach performs better for small datasets (~100 points each).
+"""
+struct StrictlyMinimumDistance{M<:Metric}
+    brute::Bool
+    metric::M
+end
+StrictlyMinimumDistance() = StrictlyMinimumDistance(false, Euclidean())
+StrictlyMinimumDistance(m::Metric) = StrictlyMinimumDistance(false, m)
+StrictlyMinimumDistance(brute::Bool) = StrictlyMinimumDistance(brute, Euclidean())
+
+function dataset_distance(d1, d2::AbstractDataset, m::StrictlyMinimumDistance)
+    if m.brute
+        return dataset_distance_brute(d1, d2, m.metric)
+    else
+        tree = KDTree(d2, m.metric)
+        return dataset_distance_tree(d1, tree)
+    end
+end
+
+function dataset_distance_tree(d1, tree::KDTree)
+    # Notice that it is faster to do a bulksearch of all points in `d1`
+    # rather than use the internal inplace method `NearestNeighbors.knn_point!`.
+    _, vec_of_ds = bulksearch(tree, d1, NeighborNumber(1))
+    return minimum(vec_of_ds)[1]
+    # For future benchmarking reasons, we leave the code here
+    # ε = eltype(d1)(Inf)
+    # dist, idx = [ε], [0]
+    # for p in d1 # iterate over all points of dataset
+    #     Neighborhood.NearestNeighbors.knn_point!(
+    #         tree, p, false, dist, idx, Neighborhood.NearestNeighbors.always_false
+    #     )
+    #     @inbounds dist[1] < ε && (ε = dist[1])
+    # end
+    return ε
+end
+
+function dataset_distance_brute(d1, d2::AbstractDataset, metric = Euclidean())
+    ε = eltype(d2)(Inf)
+    for x ∈ d1
+        for y ∈ d2
+            εnew = metric(x, y)
+            εnew < ε && (ε = εnew)
+        end
+    end
+    return ε
+end
+
 ###########################################################################################
 # Sets of datasets distance
 ###########################################################################################
@@ -97,12 +131,11 @@ of distances. Specifically, `distances[i][j]` is the distance of the dataset in
 the `i` key of `a₊` to the `j` key of `a₋`. Notice that distances from `a₋` to
 `a₊` are not computed at all (assumming symmetry in the distance function).
 
-The `metric/method` can be as in [`dataset_distance`](@ref), in which case
-both sets must have equal-dimension datasets.
+The `metric/method` can be as in [`dataset_distance`](@ref).
 However, `method` can also be any arbitrary user function that takes as input
 two datasets and returns any positive-definite number as their "distance".
 """
-function datasets_sets_distances(a₊, a₋, method = Euclidean())
+function datasets_sets_distances(a₊, a₋, method = Centroid())
     (isempty(a₊) || isempty(a₋)) && error("The dataset containers must be non-empty.")
     ids₊, ids₋ = keys(a₊), keys(a₋)
     gettype = a -> eltype(first(values(a)))
@@ -111,20 +144,17 @@ function datasets_sets_distances(a₊, a₋, method = Euclidean())
     _datasets_sets_distances!(distances, a₊, a₋, method)
 end
 
-function _datasets_sets_distances!(distances, a₊, a₋, metric::Metric)
-    @assert keytype(a₊) == keytype(a₋)
-    search_trees = Dict(m => KDTree(vec(att), metric) for (m, att) in pairs(a₋))
+function _datasets_sets_distances!(distances, a₊, a₋, c::Centroid)
+    centroids₋ = Dict(k => centroid(v) for (k, v) in pairs(a₋))
     @inbounds for (k, A) in pairs(a₊)
         distances[k] = pairs(valtype(distances)())
-        for (m, tree) in search_trees
-            # Internal method of `dataset_distance` for non-brute way
-            d = dataset_distance(A, tree)
-            distances[k][m] = d
+        centroid_A = centroid(A)
+        for m in keys(a₋)
+            distances[k][m] = c.metric(centroid_A, centroids₋[m])
         end
     end
     return distances
 end
-
 
 function _datasets_sets_distances!(distances, a₊, a₋, method::Hausdorff)
     @assert keytype(a₊) == keytype(a₋)
@@ -135,7 +165,7 @@ function _datasets_sets_distances!(distances, a₊, a₋, method::Hausdorff)
         distances[k] = pairs(valtype(distances)())
         tree1 = trees₊[k]
         for (m, tree2) in trees₋
-            # Internal method of `dataset_distance` for non-brute way
+            # Internal method of `dataset_distance` for Hausdorff
             d = dataset_distance(A, a₋[m], method, tree1, tree2)
             distances[k][m] = d
         end
@@ -148,6 +178,26 @@ function _datasets_sets_distances!(distances, a₊, a₋, f::Function)
         distances[k] = pairs(valtype(distances)())
         for (m, B) in pairs(a₋)
             distances[k][m] = f(A, B)
+        end
+    end
+    return distances
+end
+
+function _datasets_sets_distances!(distances, a₊, a₋, method::StrictlyMinimumDistance)
+    @assert keytype(a₊) == keytype(a₋)
+    if method.brute == false
+        search_trees = Dict(m => KDTree(vec(att), method.metric) for (m, att) in pairs(a₋))
+    end
+    @inbounds for (k, A) in pairs(a₊)
+        distances[k] = pairs(valtype(distances)())
+        for (m, B) in pairs(a₋)
+            if method.brute == false
+                # Internal method of `dataset_distance` for non-brute way
+                d = dataset_distance_tree(A, search_trees[m])
+            else
+                d = dataset_distance_brute(A, B, method.metric)
+            end
+            distances[k][m] = d
         end
     end
     return distances
