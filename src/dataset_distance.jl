@@ -10,7 +10,7 @@ Calculate a distance between two `AbstractDatasets`,
 i.e., a distance defined between sets of points, as dictated by `method`.
 
 The possible `methods` are:
-- [`Centroid`](@ref), which is the default
+- [`Centroid`](@ref), which is the default, and 100s of times faster than the rest
 - [`Hausdorff`](@ref)
 - [`StrictlyMinimumDistance`](@ref)
 """
@@ -32,7 +32,7 @@ Centroid() = Centroid(Euclidean())
 
 function dataset_distance(d1::AbstractDataset, d2::AbstractDataset, c::Centroid)
     c1, c2 = centroid(d1), centroid(d2)
-    return  c.metric(c1, c2)
+    return c.metric(c1, c2)
 end
 centroid(A::AbstractDataset) = sum(A)/length(A)
 
@@ -43,7 +43,8 @@ The [Hausdorff distance](https://en.wikipedia.org/wiki/Hausdorff_distance) is th
 greatest of all the distances from a point in one set to the closest point in the other set.
 The distance is calculated with the metric given to `Hausdorff` which defaults to Euclidean.
 
-`Hausdorff` is a proper metric in the space of sets of datasets.
+`Hausdorff` is 2x slower than [`StrictlyMinimumDistance`](@ref), however it is
+a proper metric in the space of sets of datasets.
 """
 struct Hausdorff{M<:Metric}
     metric::M
@@ -55,13 +56,9 @@ function dataset_distance(d1::AbstractDataset, d2, h::Hausdorff,
         tree1 = KDTree(d1, h.metric),
         tree2 = KDTree(d2, h.metric),
     )
-    # This yields the minimum distance between each point
-    _, vec_of_distances12 = bulksearch(tree1, vec(d2), NeighborNumber(1))
-    _, vec_of_distances21 = bulksearch(tree2, vec(d1), NeighborNumber(1))
-    # get max of min distances (they are vectors of length-1 vectors, hence the [1])
-    max_d12 = maximum(vec_of_distances12)[1]
-    max_d21 = maximum(vec_of_distances21)[1]
-    return max(max_d12, max_d21)
+    ε1 = dataset_distance_tree(d2, tree1, >)
+    ε2 = dataset_distance_tree(d1, tree2, >)
+    return max(ε1, ε2)
 end
 
 """
@@ -71,9 +68,12 @@ The `StrictlyMinimumDistance` returns the minimum distance of all the distances 
 point in one set to the closest point in the other set.
 The distance is calculated with the given metric.
 
-The `brute = false` argument switches the computation between a KDTree-based version,
+The `brute::Bool` argument switches the computation between a KDTree-based version,
 or brute force (i.e., calculation of all distances and picking the smallest one).
-Brute approach performs better for small datasets (~100 points each).
+Brute force performs better for datasets that are either large dimensional or
+have a small amount of points. Deciding a cutting point is not trivial,
+and is recommended to simply benchmark the [`dataset_distance`](@ref) function to
+make a decision.
 """
 struct StrictlyMinimumDistance{M<:Metric}
     brute::Bool
@@ -92,20 +92,21 @@ function dataset_distance(d1, d2::AbstractDataset, m::StrictlyMinimumDistance)
     end
 end
 
-function dataset_distance_tree(d1, tree::KDTree)
-    # Notice that it is faster to do a bulksearch of all points in `d1`
-    # rather than use the internal inplace method `NearestNeighbors.knn_point!`.
-    _, vec_of_ds = bulksearch(tree, d1, NeighborNumber(1))
-    return minimum(vec_of_ds)[1]
-    # For future benchmarking reasons, we leave the code here
-    # ε = eltype(d1)(Inf)
-    # dist, idx = [ε], [0]
-    # for p in d1 # iterate over all points of dataset
-    #     Neighborhood.NearestNeighbors.knn_point!(
-    #         tree, p, false, dist, idx, Neighborhood.NearestNeighbors.always_false
-    #     )
-    #     @inbounds dist[1] < ε && (ε = dist[1])
-    # end
+# The comparison version exists because when passing `>` it is used in `Hausdorf`
+function dataset_distance_tree(d1, tree::KDTree, comparison = <)
+    if comparison === <
+        ε = eltype(d1)(Inf)
+    elseif comparison === >
+        ε = eltype(d1)(-Inf)
+    end
+    # We use internal source code extracted from NearestNeighbors.jl for max performance
+    dist, idx = [ε], [0]
+    for p in d1 # iterate over all points of dataset
+        Neighborhood.NearestNeighbors.knn_point!(
+            tree, p, false, dist, idx, Neighborhood.NearestNeighbors.always_false
+        )
+        @inbounds comparison(dist[1], ε) && (ε = dist[1])
+    end
     return ε
 end
 
@@ -124,14 +125,14 @@ end
 # Sets of datasets distance
 ###########################################################################################
 """
-    datasets_sets_distances(a₊, a₋ [, metric/method]) → distances
+    datasets_sets_distances(a₊, a₋ [, method]) → distances
 Calculate distances between sets of `Dataset`s. Here  `a₊, a₋` are containers of
 `Dataset`s, and the returned distances are dictionaries of
 of distances. Specifically, `distances[i][j]` is the distance of the dataset in
 the `i` key of `a₊` to the `j` key of `a₋`. Notice that distances from `a₋` to
 `a₊` are not computed at all (assumming symmetry in the distance function).
 
-The `metric/method` can be as in [`dataset_distance`](@ref).
+The `method` can be as in [`dataset_distance`](@ref).
 However, `method` can also be any arbitrary user function that takes as input
 two datasets and returns any positive-definite number as their "distance".
 """
