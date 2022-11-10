@@ -32,7 +32,6 @@ ENV["JULIA_DEBUG"] = "Documenter"
 STATESPACESETS_PAGES = [
     "index.md",
 ]
-include("style.jl")
 
 makedocs(
     modules = [StateSpaceSets],
