@@ -1,20 +1,35 @@
 using Test, StateSpaceSets
 
-println("\nTesting Dataset distance...")
-
 @testset "Dataset Distances" begin
-    d1 = float.(range(1, 10; length = 11))
-    d2 = d1 .+ 10
-    @test dataset_distance(Dataset(d1), Dataset(d2)) == 1.0
-    @test dataset_distance(Dataset(d1), Dataset(d2); brute = false) == 1.0
-    @test dataset_distance(Dataset(d1), Dataset(d2); brute = true) == 1.0
-    @test dataset_distance(Dataset(d1), Dataset(d2), Hausdorff()) == 10.0
+    @testset "metric" begin
+        d1 = float.(range(1, 10; length = 11))
+        d2 = d1 .+ 10
+        @test dataset_distance(Dataset(d1), Dataset(d2)) == 1.0
+        @test dataset_distance(Dataset(d1), Dataset(d2); brute = false) == 1.0
+        @test dataset_distance(Dataset(d1), Dataset(d2); brute = true) == 1.0
+        @test dataset_distance(Dataset(d1), Dataset(d2), Hausdorff()) == 10.0
+    end
 
-    d1 = Dataset([SVector(0.0, 1)])
-    d2 = Dataset([SVector(1.0, 2)])
-    @test dataset_distance(d1, d2, Chebyshev()) == 1.0
-    d2 = Dataset([SVector(1.0, 2), SVector(1.0, 3)])
-    @test dataset_distance(d1, d2, Hausdorff(Chebyshev())) == 2.0
+    @testset "Hausdorff" begin
+        d1 = Dataset([SVector(0.0, 1)])
+        d2 = Dataset([SVector(1.0, 2)])
+        @test dataset_distance(d1, d2, Chebyshev()) == 1.0
+        d2 = Dataset([SVector(1.0, 2), SVector(1.0, 3)])
+        @test dataset_distance(d1, d2, Hausdorff(Chebyshev())) == 2.0
+    end
+
+    @testset "Centroid" begin
+        # centroid is 0, 0.5
+        d1 = Dataset([SVector(0.0, 0.0), SVector(0.0, 1.0)])
+        # centroid is 1, 0.5
+        d2 = Dataset([SVector(1.0, 0.0), SVector(1.0, 1.0)])
+        @test dataset_distance(d1, d2, Centroid()) == 1.0
+        @test dataset_distance(d1, d2, Centroid(Chebyshev())) == 1.0
+        # And also with custom function
+        custom_f(x, y) = abs(x[2] - y[2])
+        @test dataset_distance(d1, d2, Centroid(custom_f)) == 0.0
+    end
+
 end
 
 @testset "Sets of Dataset Distances" begin
@@ -57,5 +72,15 @@ end
         dsds = datasets_sets_distances(set3, set3, f)
         @test dsds[2][3] == dsds[3][2] == 8
         @test dsds[2][1] == dsds[1][2] == 0
+    end
+
+    @testset "centroid" begin
+        d1 = Dataset([SVector(0.0, 0.0), SVector(0.0, 1.0)])
+        d2 = Dataset([SVector(1.0, 0.0), SVector(1.0, 1.0)])
+        set1 = [d1, d2]
+        dsds = datasets_sets_distances(set1, set1, Centroid())
+        @test dsds[1][1] == 0
+        @test dsds[2][1] == 1
+        @test dsds[1][2] == 1
     end
 end
