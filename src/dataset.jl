@@ -1,7 +1,8 @@
 using StaticArrays, LinearAlgebra
 using Base.Iterators: flatten
 
-export Dataset, AbstractDataset, SVector, minima, maxima
+export Dataset, AbstractDataset, minima, maxima
+export SVector, SMatrix, @SVector, @SMatrix
 export minmaxima, columns, standardize, dimension
 
 abstract type AbstractDataset{D, T} end

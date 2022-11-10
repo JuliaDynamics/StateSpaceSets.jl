@@ -1,4 +1,4 @@
-using Test, DelayEmbeddings
+using Test, StateSpaceSets
 using Statistics
 
 println("\nTesting Dataset...")
@@ -75,7 +75,7 @@ println("\nTesting Dataset...")
     @test e isa SVector{2, Float64}
 
     sub = @view data[11:20]
-    @test sub isa DelayEmbeddings.SubDataset
+    @test sub isa StateSpaceSets.SubDataset
     @test sub[2] == data[12]
     @test dimension(sub) == dimension(data)
     d = sub[:, 1]

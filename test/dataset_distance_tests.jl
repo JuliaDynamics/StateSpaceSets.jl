@@ -1,4 +1,4 @@
-using Test, DelayEmbeddings
+using Test, StateSpaceSets
 
 println("\nTesting Dataset distance...")
 
