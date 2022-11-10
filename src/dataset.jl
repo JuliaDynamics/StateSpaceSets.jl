@@ -72,6 +72,7 @@ function columns end
     gens = [:(data[:, $k]) for k=1:D]
     quote tuple($(gens...)) end
 end
+columns(x::AbstractVector{<:Real}) = (x, )
 
 # Set index stuff
 @inline Base.setindex!(d::AbstractDataset, v, i::Int) = (d.data[i] = v)
