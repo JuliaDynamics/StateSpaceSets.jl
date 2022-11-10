@@ -1,4 +1,6 @@
-export dataset_distance, Hausdorff, datasets_sets_distances
+export dataset_distance, datasets_sets_distances
+export Hausdorff, Centroid
+
 ###########################################################################################
 # Dataset distance
 ###########################################################################################
@@ -86,6 +88,28 @@ function dataset_distance(d1::AbstractDataset, d2, h::Hausdorff,
     return max(max_d12, max_d21)
 end
 
+"""
+    Centroid(metric = Euclidean())
+A dataset distance that can be used in [`dataset_distance`](@ref).
+The `Centroid` method returns the distance (according to `metric`) between the
+[centroids](https://en.wikipedia.org/wiki/Centroid) (a.k.a. center of mass) of the datasets.
+
+Besides giving as `metric` an instance from Distances.jl, you can give any function that
+takes in two static vectors are returns a positive definite number to use as a distance.
+"""
+struct Centroid{M}
+    metric::M
+end
+Centroid() = Centroid(Euclidean())
+
+function dataset_distance(d1::AbstractDataset, d2, c::Centroid)
+    c1, c2 = centroid(d1), centroid(d2)
+    return centroid_distance(c1, c2, c)
+end
+centroid(A::AbstractDataset) = sum(A)/length(A)
+centroid_distance(x, y, c::Centroid) = c.metric(x, y)
+
+
 ###########################################################################################
 # Sets of datasets distance
 ###########################################################################################
@@ -148,6 +172,18 @@ function _datasets_sets_distances!(distances, a₊, a₋, f::Function)
         distances[k] = pairs(valtype(distances)())
         for (m, B) in pairs(a₋)
             distances[k][m] = f(A, B)
+        end
+    end
+    return distances
+end
+
+function _datasets_sets_distances!(distances, a₊, a₋, c::Centroid)
+    centroids₋ = Dict(k => centroid(v) for (k, v) in pairs(a₋))
+    @inbounds for (k, A) in pairs(a₊)
+        distances[k] = pairs(valtype(distances)())
+        centroid_A = centroid(A)
+        for m in keys(a₋)
+            distances[k][m] = centroid_distance(centroid_A, centroids₋[m], c)
         end
     end
     return distances

@@ -48,6 +48,19 @@ minmaxima
 columns
 ```
 
+## Dataset distances
+### Two datasets
+```@docs
+dataset_distance
+Hausdorff
+Centroid
+```
+### Sets of datasets
+```@docs
+datasets_sets_distances
+```
+
+
 ## Dataset I/O
 Input/output functionality for an `AbstractDataset` is already achieved using base Julia, specifically `writedlm` and `readdlm`.
 To write and read a dataset, simply do:
