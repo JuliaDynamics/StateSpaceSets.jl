@@ -4,16 +4,18 @@ using Test, StateSpaceSets
     @testset "metric" begin
         d1 = float.(range(1, 10; length = 11))
         d2 = d1 .+ 10
-        @test dataset_distance(Dataset(d1), Dataset(d2)) == 1.0
-        @test dataset_distance(Dataset(d1), Dataset(d2); brute = false) == 1.0
-        @test dataset_distance(Dataset(d1), Dataset(d2); brute = true) == 1.0
-        @test dataset_distance(Dataset(d1), Dataset(d2), Hausdorff()) == 10.0
+        @test dataset_distance(Dataset(d1), Dataset(d2), StrictlyMinimumDistance()) == 1.0
+        @test dataset_distance(Dataset(d1), Dataset(d2), StrictlyMinimumDistance(true)) == 1.0
+        d1 = Dataset([SVector(0.0, 1)])
+        d2 = Dataset([SVector(1.0, 2)])
+        @test dataset_distance(d1, d2, StrictlyMinimumDistance(Chebyshev())) == 1.0
     end
 
     @testset "Hausdorff" begin
+        d1 = float.(range(1, 10; length = 11))
+        d2 = d1 .+ 10
+        @test dataset_distance(Dataset(d1), Dataset(d2), Hausdorff()) == 10.0
         d1 = Dataset([SVector(0.0, 1)])
-        d2 = Dataset([SVector(1.0, 2)])
-        @test dataset_distance(d1, d2, Chebyshev()) == 1.0
         d2 = Dataset([SVector(1.0, 2), SVector(1.0, 3)])
         @test dataset_distance(d1, d2, Hausdorff(Chebyshev())) == 2.0
     end
@@ -45,7 +47,7 @@ end
     d3 = Dataset([makedata(x+20) for x in r])
     set2 = Dataset.([d1, d2, d3])
 
-    @testset "$method" for method in (Euclidean(), Hausdorff())
+    @testset "$method" for method in (StrictlyMinimumDistance(Euclidean()), Hausdorff())
         for set in (set1, set2)
 
             offset = method isa Hausdorff ? 9 : 0
