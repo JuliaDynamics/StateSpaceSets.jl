@@ -353,9 +353,3 @@ function standardized_timeseries(d::AbstractDataset)
     end
     return xs, means, stds
 end
-
-"""
-    standardize(x::Vector) = (x - mean(x))/std(x)
-"""
-standardize(x::Vector) = standardize!(copy(x))
-standardize!(x::Vector) = (x .= (x .- mean(x))./std(x))
