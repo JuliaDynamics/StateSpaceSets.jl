@@ -135,3 +135,14 @@ println("\nTesting Dataset...")
     end
   end
 end
+
+@testset "timeseries" begin
+    x = rand(1000)
+    @test dimension(x) == 1
+    mi, ma = minmaxima(x)
+    @test mi isa SVector
+    @test 0 ≤ mi[1] ≤ 1
+    @test 0 ≤ ma[1] ≤ 1
+    @test minima(x) == mi
+    @test maxima(x) == ma
+end

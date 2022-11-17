@@ -1,7 +1,7 @@
 name = "StateSpaceSets"
 uuid = "40b095a5-5852-4c12-98c7-d43bf788e795"
 authors = ["George Datseris <datseris.george@gmail.com>"]
-version = "0.1.1"
+version = "0.1.2"
 repo = "https://github.com/JuliaDynamics/StateSpaceSets.jl.git"
 
 [deps]
