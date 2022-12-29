@@ -73,12 +73,19 @@ function boxregion(a::Real, b::Real, rng = Random.GLOBAL_RNG)
     return gen, isinside
 end
 
-#Algorithm is taken from https://math.stackexchange.com/questions/1585975/how-to-generate-random-points-on-a-sphere.
-#It follows from the fact that a multivariate normal distribution is spherically symmetric.
-# However, it is programmed incredibly inefficiently.
+# Algorithm from https://mathworld.wolfram.com/HyperspherePointPicking.html
+# Normalized multivariate gaussian is on hypersphere
+import LinearAlgebra
 function sphereregion(r, dim, center, rng)
     @assert r ≥ 0
-    gen() = normalize([( 2*randn(rng) - 1 ) for j=1:dim]) .* r .+ center
+    dummy = zeros(dim)
+    function generator()
+        randn!(rng, dummy)
+        dummy .*= r
+        dummy ./= LinearAlgebra.norm(dummy)
+        dummy .+= center
+        return dummy
+    end
     isinside(x) = norm(x .- center) < r
-    return gen, isinside
+    return generator, isinside
 end
