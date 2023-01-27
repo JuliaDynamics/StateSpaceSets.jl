@@ -120,6 +120,26 @@ function Base.hcat(ds::Vararg{AbstractDataset{D, T} where {D}, N}) where {T, N}
     return Dataset(v)
 end
 
+# TODO: This can probably be done more efficiently by pre-computing the size of the
+# `SVector`s, and doing something similar to the explicit two-argument versions above.
+# However, it's not immediately clear how to do this efficiently. This implementation
+# converts every input to a dataset first and promotes everything to a common type.
+# It's not optimal, because it allocates unnecessarily, but it works.
+# If this method is made more efficient, the method above can be dropped.
+function hcat(xs::Vararg{Union{AbstractVector{<:Real}, AbstractDataset{D, T} where {D, T}}, N}) where {N}
+    ds = Dataset.(xs)
+    Ls = length.(ds)
+    maxlen = maximum(Ls)
+    all(Ls .== maxlen) || error("Datasets must be of same length")
+    newdim = sum(dimension.(ds))
+    T = promote_type(eltype.(ds)...)
+    v = Vector{SVector{newdim, T}}(undef, maxlen)
+    for i = 1:maxlen
+        v[i] = SVector{newdim, T}(Iterators.flatten(ds[d][i] for d = 1:N)...,)
+    end
+    return Dataset(v)
+end
+
 ###########################################################################
 # Concrete implementation
 ###########################################################################
@@ -206,7 +226,7 @@ function Dataset(vecs::Vararg{<:AbstractVector{T}}) where {T}
     return Dataset(_dataset(vecs...))
 end
 
-Dataset(xs::Vararg{AbstractDataset}) = hcat(xs...)
+Dataset(xs::Vararg{Union{AbstractVector, AbstractDataset}}) = hcat(xs...)
 Dataset(x::Vector{<:Real}, y::AbstractDataset{D, T}) where {D, T} = hcat(x, y)
 Dataset(x::AbstractDataset{D, T}, y::Vector{<:Real}) where {D, T} = hcat(x, y)
 

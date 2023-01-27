@@ -38,6 +38,9 @@ println("\nTesting Dataset...")
         @test hcat(y, D1) |> size == (5, 3)
         @test hcat(D1, y) == Dataset(([1:5 2:6 y]))
         @test hcat(y, D1) == Dataset(([y 1:5 2:6]))
+
+        x, y, z, w = rand(100), rand(100), Dataset(rand(100, 2)), Dataset(rand(Int, 100, 3))
+        @test Dataset(x, y, z, w) == Dataset(Dataset(x), Dataset(y), z, w)
     end
 
     # TODO: By construction, these errors will occur, because the type constraints are
