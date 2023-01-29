@@ -7,7 +7,7 @@ export WithinRange, NeighborNumber
 export Euclidean, Chebyshev, Cityblock
 
 Neighborhood.KDTree(D::AbstractDataset, metric::Metric = Euclidean(); kwargs...) =
-KDTree(D.data, metric; kwargs...)
+KDTree(vec(D), metric; kwargs...)
 
 # Convenience extensions for ::Dataset in bulksearches
 for f ∈ (:bulkisearch, :bulksearch)

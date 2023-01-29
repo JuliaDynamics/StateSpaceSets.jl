@@ -1,4 +1,4 @@
-using StaticArrays, LinearAlgebra
+using StaticArraysCore, LinearAlgebra
 using Base.Iterators: flatten
 
 export Dataset, AbstractDataset, minima, maxima
@@ -12,7 +12,6 @@ abstract type AbstractDataset{D, T} end
 #     :lastindex, :firstindex, :vec, :getindex, :iterate)
 #     @eval Base.$(f)(d::AbsractDataset, args...) = $(f)(d.data, args...)
 # end
-
 
 """
     dimension(thing) -> D

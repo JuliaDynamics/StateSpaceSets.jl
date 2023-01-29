@@ -1,6 +1,7 @@
 # Extensions of the `Dataset` functions for timeseries
 """
     Timeseries = AbstractVector{<:Real}
+
 A `Union` type representing timeseries in JuliaDynamics packages.
 """
 const Timeseries = AbstractVector{<:Real}
