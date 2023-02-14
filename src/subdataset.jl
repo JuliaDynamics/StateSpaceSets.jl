@@ -1,12 +1,12 @@
 """
-    SubDataset{D, T, <:AbstractDataset{D,T}, <:SubArray{<:SVector{D,T},1}} <: AbstractDataset{D,T}
+    SubDataset{D, T, <:AbstractStateSpaceSet{D,T}, <:SubArray{<:SVector{D,T},1}} <: AbstractStateSpaceSet{D,T}
 
-A view of an `AbstractDataset`, as returned by the `view` function
-or the `@view` macro on a dataset instance. A `SubDataset` is an `AbstractDataset`
+A view of an `AbstractStateSpaceSet`, as returned by the `view` function
+or the `@view` macro on a dataset instance. A `SubDataset` is an `AbstractStateSpaceSet`
 of the same type as its parent, so indexing, iteration, and most other functions
 can be expected to work in the same way for both the parent and the view.
 """
-struct SubDataset{D, T, P<:AbstractDataset{D,T}, S<:SubArray{<:SVector{D,T},1}} <: AbstractDataset{D,T}
+struct SubDataset{D, T, P<:AbstractStateSpaceSet{D,T}, S<:SubArray{<:SVector{D,T},1}} <: AbstractStateSpaceSet{D,T}
     parent::P
     data::S
     function SubDataset(par, data)
@@ -34,8 +34,8 @@ Base.parentindices(sd::SubDataset) = parentindices(sd.data)
 Return a view into the parent dataset `d`, as a [`SubDataset`](@ref)
 that contains the datapoints of `d` referred to by `indices`.
 """
-Base.view(d::AbstractDataset, i) = SubDataset(d, view(d.data, i))
+Base.view(d::AbstractStateSpaceSet, i) = SubDataset(d, view(d.data, i))
 
-function Base.view(::AbstractDataset, ::Any, ::Any, ::Vararg)
+function Base.view(::AbstractStateSpaceSet, ::Any, ::Any, ::Vararg)
     throw(ArgumentError("Dataset views only accept indices on one dimension"))
 end

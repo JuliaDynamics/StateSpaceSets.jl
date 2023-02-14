@@ -1,2 +1,3 @@
 @deprecate dataset_distance set_distance
 @deprecate datasets_sets_distance setsofsets_distance
+@deprecate AbstractDataset AbstractStateSpaceSet

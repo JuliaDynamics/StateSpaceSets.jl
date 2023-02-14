@@ -32,11 +32,11 @@ struct Centroid{M}
 end
 Centroid() = Centroid(Euclidean())
 
-function set_distance(d1::AbstractDataset, d2::AbstractDataset, c::Centroid)
+function set_distance(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet, c::Centroid)
     c1, c2 = centroid(d1), centroid(d2)
     return c.metric(c1, c2)
 end
-centroid(A::AbstractDataset) = sum(A)/length(A)
+centroid(A::AbstractStateSpaceSet) = sum(A)/length(A)
 
 """
     Hausdorff(metric = Euclidean())
@@ -54,7 +54,7 @@ struct Hausdorff{M<:Metric}
 end
 Hausdorff() = Hausdorff(Euclidean())
 
-function set_distance(d1::AbstractDataset, d2, h::Hausdorff,
+function set_distance(d1::AbstractStateSpaceSet, d2, h::Hausdorff,
         # trees given for a natural way to call this function in `setsofsets_distance`
         tree1 = KDTree(d1, h.metric),
         tree2 = KDTree(d2, h.metric),
@@ -87,7 +87,7 @@ StrictlyMinimumDistance() = StrictlyMinimumDistance(false, Euclidean())
 StrictlyMinimumDistance(m::Metric) = StrictlyMinimumDistance(false, m)
 StrictlyMinimumDistance(brute::Bool) = StrictlyMinimumDistance(brute, Euclidean())
 
-function set_distance(d1, d2::AbstractDataset, m::StrictlyMinimumDistance)
+function set_distance(d1, d2::AbstractStateSpaceSet, m::StrictlyMinimumDistance)
     if m.brute
         return set_distance_brute(d1, d2, m.metric)
     else
@@ -114,7 +114,7 @@ function set_distance_tree(d1, tree::KDTree, comparison = <)
     return ε
 end
 
-function set_distance_brute(d1, d2::AbstractDataset, metric = Euclidean())
+function set_distance_brute(d1, d2::AbstractStateSpaceSet, metric = Euclidean())
     ε = eltype(d2)(Inf)
     for x ∈ d1
         for y ∈ d2
