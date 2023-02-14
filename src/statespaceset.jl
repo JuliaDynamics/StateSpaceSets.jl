@@ -1,7 +1,7 @@
 using StaticArraysCore, LinearAlgebra
 using Base.Iterators: flatten
 
-export StateSpaceSet, AbstractStateSpaceSet, minima, maxima
+export AbstractStateSpaceSet, minima, maxima
 export SVector, SMatrix
 export minmaxima, columns, standardize, dimension
 
@@ -138,32 +138,11 @@ function hcat(xs::Vararg{Union{AbstractVector{<:Real}, AbstractStateSpaceSet{D, 
 end
 
 #####################################################################################
-#                                StateSpaceSet <-> Matrix                                 #
-#####################################################################################
-function Base.Matrix{S}(d::AbstractStateSpaceSet{D,T}) where {S, D, T}
-    mat = Matrix{S}(undef, length(d), D)
-    for j in 1:D
-        for i in 1:length(d)
-            @inbounds mat[i,j] = d.data[i][j]
-        end
-    end
-    mat
-end
-Base.Matrix(d::AbstractStateSpaceSet{D,T}) where {D, T} = Matrix{T}(d)
-
-function StateSpaceSet(mat::AbstractMatrix{T}; warn = true) where {T}
-    N, D = size(mat)
-    warn && D > 100 && @warn "You are attempting to make a StateSpaceSet of dimensions > 100"
-    warn && D > N && @warn "You are attempting to make a StateSpaceSet of a matrix with more columns than rows."
-    StateSpaceSet{D,T}(reshape(reinterpret(SVector{D,T}, vec(transpose(mat))), (N,)))
-end
-
-#####################################################################################
 #                                   Pretty Printing                                 #
 #####################################################################################
-function Base.summary(d::StateSpaceSet{D, T}) where {D, T}
+function Base.summary(d::AbstractStateSpaceSet{D, T}) where {D, T}
     N = length(d)
-    return "$D-dimensional StateSpaceSet{$(T)} with $N points"
+    return "$D-dimensional $(nameof(typeof(d))){$(T)} with $N points"
 end
 
 function matstring(d::AbstractStateSpaceSet{D, T}) where {D, T}

@@ -94,6 +94,28 @@ StateSpaceSet(xs::Vararg{Union{AbstractVector, AbstractStateSpaceSet}}) = hcat(x
 StateSpaceSet(x::Vector{<:Real}, y::AbstractStateSpaceSet{D, T}) where {D, T} = hcat(x, y)
 StateSpaceSet(x::AbstractStateSpaceSet{D, T}, y::Vector{<:Real}) where {D, T} = hcat(x, y)
 
+
+#####################################################################################
+#                                StateSpaceSet <-> Matrix                                 #
+#####################################################################################
+function Base.Matrix{S}(d::AbstractStateSpaceSet{D,T}) where {S, D, T}
+    mat = Matrix{S}(undef, length(d), D)
+    for j in 1:D
+        for i in 1:length(d)
+            @inbounds mat[i,j] = d.data[i][j]
+        end
+    end
+    mat
+end
+Base.Matrix(d::AbstractStateSpaceSet{D,T}) where {D, T} = Matrix{T}(d)
+
+function StateSpaceSet(mat::AbstractMatrix{T}; warn = true) where {T}
+    N, D = size(mat)
+    warn && D > 100 && @warn "You are attempting to make a StateSpaceSet of dimensions > 100"
+    warn && D > N && @warn "You are attempting to make a StateSpaceSet of a matrix with more columns than rows."
+    StateSpaceSet{D,T}(reshape(reinterpret(SVector{D,T}, vec(transpose(mat))), (N,)))
+end
+
 ###########################################################################
 # View
 ###########################################################################

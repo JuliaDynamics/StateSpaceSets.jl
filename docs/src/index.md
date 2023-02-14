@@ -4,7 +4,6 @@
 StateSpaceSets
 ```
 
-
 !!! info "Timeseries and datasets"
     The word "timeseries" can be confusing, because it can mean a univariate (also called scalar or one-dimensional) timeseries or a multivariate (also called multi-dimensional) timeseries.
     To resolve this confusion, in **DynamicalSystems.jl** we have the following convention: **"timeseries"** is always univariate! it refers to a one-dimensional vector of numbers, which exists with respect to some other one-dimensional vector of numbers that corresponds to a time vector.
@@ -14,11 +13,12 @@ StateSpaceSets
     This is typically the output of the function [`trajectory`](@ref), or the delay embedding of a timeseries via [`embed`](@ref), both of which are also represented as a [`StateSpaceSet`](@ref).
 
 
-## Datasets
+## StateSpaceSet
 
 Trajectories, and in general sets in state space, are represented by a structure called `StateSpaceSet` in **DynamicalSystems.jl**
 (while timeseries are always standard Julia `Vector`s).
 It is recommended to always [`standardize`](@ref) datasets.
+
 ```@docs
 StateSpaceSet
 standardize
