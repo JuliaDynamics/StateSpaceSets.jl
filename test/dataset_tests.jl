@@ -1,46 +1,46 @@
 using Test, StateSpaceSets
 using Statistics
 
-println("\nTesting Dataset...")
+println("\nTesting StateSpaceSet...")
 
-@testset "Dataset" begin
-  data = Dataset(rand(1001,3))
+@testset "StateSpaceSet" begin
+  data = StateSpaceSet(rand(1001,3))
   xs = columns(data)
 
   @testset "Basics" begin
-    x, y, z = Dataset(rand(10, 2)), Dataset(rand(10, 2)), rand(10)
-    @test Dataset(x) == x # identity
-    @test Dataset(x, y,) isa Dataset
-    @test Dataset(x, y, y) isa Dataset
-    @test size(Dataset(x, y)) == (10, 4)
+    x, y, z = StateSpaceSet(rand(10, 2)), StateSpaceSet(rand(10, 2)), rand(10)
+    @test StateSpaceSet(x) == x # identity
+    @test StateSpaceSet(x, y,) isa StateSpaceSet
+    @test StateSpaceSet(x, y, y) isa StateSpaceSet
+    @test size(StateSpaceSet(x, y)) == (10, 4)
   end
 
   @testset "Concatenation/Append" begin
 
     @testset "append" begin
-        D1, D2 = Dataset([1:10 2:11]), Dataset([3:12 4:13])
+        D1, D2 = StateSpaceSet([1:10 2:11]), StateSpaceSet([3:12 4:13])
         append!(D1, D2)
         @test length(D1) == 20
         d1 = [1:10 |> collect; 3:12 |> collect]
         d2 = [2:11 |> collect; 4:13 |> collect]
-        @test D1 == Dataset([d1 d2])
+        @test D1 == StateSpaceSet([d1 d2])
     end
 
     types = [Int, Float64]
     @testset "hcat with identical element type ($(T))" for T in types
         x1, x2, x3 = T.([1:5 2:6]), T.([3:7 4:8]), T.(5:9)
-        D1, D2, D3 = Dataset(x1), Dataset(x2), Dataset(x3)
+        D1, D2, D3 = StateSpaceSet(x1), StateSpaceSet(x2), StateSpaceSet(x3)
         y = T.(1:5) |> collect
-        @test hcat(D1, y) == Dataset([1:5 2:6 1:5])
-        @test hcat(D1, D2) == Dataset([1:5 2:6 3:7 4:8])
-        @test hcat(D1, D2, D3) == Dataset([1:5 2:6 3:7 4:8 5:9])
+        @test hcat(D1, y) == StateSpaceSet([1:5 2:6 1:5])
+        @test hcat(D1, D2) == StateSpaceSet([1:5 2:6 3:7 4:8])
+        @test hcat(D1, D2, D3) == StateSpaceSet([1:5 2:6 3:7 4:8 5:9])
         @test hcat(D1, y) |> size == (5, 3)
         @test hcat(y, D1) |> size == (5, 3)
-        @test hcat(D1, y) == Dataset(([1:5 2:6 y]))
-        @test hcat(y, D1) == Dataset(([y 1:5 2:6]))
+        @test hcat(D1, y) == StateSpaceSet(([1:5 2:6 y]))
+        @test hcat(y, D1) == StateSpaceSet(([y 1:5 2:6]))
 
-        x, y, z, w = rand(100), rand(100), Dataset(rand(100, 2)), Dataset(rand(Int, 100, 3))
-        @test Dataset(x, y, z, w) == Dataset(Dataset(x), Dataset(y), z, w)
+        x, y, z, w = rand(100), rand(100), StateSpaceSet(rand(100, 2)), StateSpaceSet(rand(Int, 100, 3))
+        @test StateSpaceSet(x, y, z, w) == StateSpaceSet(StateSpaceSet(x), StateSpaceSet(y), z, w)
     end
 
     # TODO: By construction, these errors will occur, because the type constraints are
@@ -50,7 +50,7 @@ println("\nTesting Dataset...")
     # Should we force the element types of the dataset and vector to be identical and
     # throw an informative error message if they are not?
     @testset "hcat with nonidentical element types" begin
-        D = Dataset([1:5 2:6]) # Dataset{2, Int}
+        D = StateSpaceSet([1:5 2:6]) # StateSpaceSet{2, Int}
         x = rand(length(D))    # Vector{Float64}
         @test_throws InexactError hcat(D, x)
         @test_throws InexactError hcat(x, D)
@@ -64,21 +64,21 @@ println("\nTesting Dataset...")
 
     @test data[1,1] isa Float64
     @test a isa Vector{Float64}
-    @test Dataset(a, b, c) == data
-    @test size(Dataset(a, b)) == (1001, 2)
+    @test StateSpaceSet(a, b, c) == data
+    @test size(StateSpaceSet(a, b)) == (1001, 2)
 
     @test data[5] isa SVector{3, Float64}
-    @test data[11:20] isa Dataset
+    @test data[11:20] isa StateSpaceSet
     @test data[:, 2:3][:, 1] == data[:, 2]
 
     @test size(data[1:10,1:2]) == (10,2)
-    @test data[1:10,1:2] == Dataset(a[1:10], b[1:10])
+    @test data[1:10,1:2] == StateSpaceSet(a[1:10], b[1:10])
     @test data[1:10, SVector(1, 2)] == data[1:10, 1:2]
     e = data[5, SVector(1,2)]
     @test e isa SVector{2, Float64}
 
-    sub = @view data[11:20]
-    @test sub isa StateSpaceSets.SubDataset
+    sub = view(data, 11:20)
+    @test sub isa StateSpaceSets.SubStateSpaceSet
     @test sub[2] == data[12]
     @test dimension(sub) == dimension(data)
     d = sub[:, 1]
@@ -89,7 +89,7 @@ println("\nTesting Dataset...")
     e = sub[5, SVector(1,2)]
     @test e isa SVector{2, Float64}
     f = sub[5:8, 1:2]
-    @test f isa Dataset
+    @test f isa StateSpaceSet
 
     # setindex
     data[1] = SVector(0.1,0.1,0.1)
@@ -98,7 +98,7 @@ println("\nTesting Dataset...")
   end
 
   @testset "copy" begin
-    d = Dataset(rand(10, 2))
+    d = StateSpaceSet(rand(10, 2))
     v = vec(d)
     d2 = copy(d)
     d2[1] == d[1]
@@ -122,10 +122,10 @@ println("\nTesting Dataset...")
 
   @testset "Conversions" begin
     m = Matrix(data)
-    @test Dataset(m) == data
+    @test StateSpaceSet(m) == data
 
     m = rand(1000, 4)
-    @test Matrix(Dataset(m)) == m
+    @test Matrix(StateSpaceSet(m)) == m
   end
 
   @testset "standardize" begin
