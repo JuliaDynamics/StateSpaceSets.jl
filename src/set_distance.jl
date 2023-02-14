@@ -2,7 +2,7 @@ export set_distance, setsofsets_distance
 export Centroid, Hausdorff, StrictlyMinimumDistance
 
 ###########################################################################################
-# Dataset distance
+# StateSpaceSet distance
 ###########################################################################################
 """
     set_distance(dataset1, dataset2 [, method])
@@ -131,8 +131,8 @@ end
 """
     setsofsets_distance(a₊, a₋ [, method]) → distances
 
-Calculate distances between sets of `Dataset`s. Here  `a₊, a₋` are containers of
-`Dataset`s, and the returned distances are dictionaries of
+Calculate distances between sets of `StateSpaceSet`s. Here  `a₊, a₋` are containers of
+`StateSpaceSet`s, and the returned distances are dictionaries of
 of distances. Specifically, `distances[i][j]` is the distance of the set in
 the `i` key of `a₊` to the `j` key of `a₋`. Notice that distances from `a₋` to
 `a₊` are not computed at all (assumming symmetry in the distance function).

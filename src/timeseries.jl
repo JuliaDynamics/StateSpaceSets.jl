@@ -1,4 +1,4 @@
-# Extensions of the `Dataset` functions for timeseries
+# Extensions of the `StateSpaceSet` functions for timeseries
 """
     Timeseries = AbstractVector{<:Real}
 

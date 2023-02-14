@@ -1,7 +1,7 @@
 using StaticArraysCore, LinearAlgebra
 using Base.Iterators: flatten
 
-export Dataset, AbstractStateSpaceSet, minima, maxima
+export StateSpaceSet, AbstractStateSpaceSet, minima, maxima
 export SVector, SMatrix, @SVector, @SMatrix
 export minmaxima, columns, standardize, dimension
 
@@ -40,7 +40,7 @@ Base.eachrow(ds::AbstractStateSpaceSet) = ds.data
 
 # 1D indexing over the container elements:
 @inline Base.getindex(d::AbstractStateSpaceSet, i::Int) = d.data[i]
-@inline Base.getindex(d::AbstractStateSpaceSet, i) = Dataset(d.data[i])
+@inline Base.getindex(d::AbstractStateSpaceSet, i) = StateSpaceSet(d.data[i])
 @inline Base.lastindex(d::AbstractStateSpaceSet) = length(d)
 @inline Base.lastindex(d::AbstractStateSpaceSet, k) = size(d)[k]
 @inline Base.firstindex(d::AbstractStateSpaceSet) = 1
@@ -58,9 +58,9 @@ Base.eachrow(ds::AbstractStateSpaceSet) = ds.data
 @inline Base.getindex(d::AbstractStateSpaceSet, i::Int, j::AbstractVector) = d[i][j]
 @inline Base.getindex(d::AbstractStateSpaceSet, ::Colon, ::Colon) = d
 @inline Base.getindex(d::AbstractStateSpaceSet, ::Colon, v::AbstractVector) =
-Dataset([d[i][v] for i in 1:length(d)])
+StateSpaceSet([d[i][v] for i in 1:length(d)])
 @inline Base.getindex(d::AbstractStateSpaceSet, v1::AbstractVector, v::AbstractVector) =
-Dataset([d[i][v] for i in v1])
+StateSpaceSet([d[i][v] for i in v1])
 
 """
     columns(dataset) -> x, y, z, ...
@@ -94,7 +94,7 @@ function Base.hcat(d::AbstractStateSpaceSet{D, T}, x::Vector{<:Real}) where {D, 
     @inbounds for i in 1:L
         data[i] = SVector{D+1, T}(d[i]..., x[i])
     end
-    return Dataset(data)
+    return StateSpaceSet(data)
 end
 
 function Base.hcat(x::Vector{<:Real}, d::AbstractStateSpaceSet{D, T}) where {D, T}
@@ -104,7 +104,7 @@ function Base.hcat(x::Vector{<:Real}, d::AbstractStateSpaceSet{D, T}) where {D, 
     @inbounds for i in 1:L
         data[i] = SVector{D+1, T}(x[i], d[i]...)
     end
-    return Dataset(data)
+    return StateSpaceSet(data)
 end
 
 function Base.hcat(ds::Vararg{AbstractStateSpaceSet{D, T} where {D}, N}) where {T, N}
@@ -116,7 +116,7 @@ function Base.hcat(ds::Vararg{AbstractStateSpaceSet{D, T} where {D}, N}) where {
     for i = 1:maxlen
         v[i] = SVector{newdim, T}(Iterators.flatten(ds[d][i] for d = 1:N)...,)
     end
-    return Dataset(v)
+    return StateSpaceSet(v)
 end
 
 # TODO: This can probably be done more efficiently by pre-computing the size of the
@@ -126,7 +126,7 @@ end
 # It's not optimal, because it allocates unnecessarily, but it works.
 # If this method is made more efficient, the method above can be dropped.
 function hcat(xs::Vararg{Union{AbstractVector{<:Real}, AbstractStateSpaceSet{D, T} where {D, T}}, N}) where {N}
-    ds = Dataset.(xs)
+    ds = StateSpaceSet.(xs)
     Ls = length.(ds)
     maxlen = maximum(Ls)
     all(Ls .== maxlen) || error("Datasets must be of same length")
@@ -136,77 +136,84 @@ function hcat(xs::Vararg{Union{AbstractVector{<:Real}, AbstractStateSpaceSet{D, 
     for i = 1:maxlen
         v[i] = SVector{newdim, T}(Iterators.flatten(ds[d][i] for d = 1:N)...,)
     end
-    return Dataset(v)
+    return StateSpaceSet(v)
 end
 
 ###########################################################################
 # Concrete implementation
 ###########################################################################
 """
-    Dataset{D, T} <: AbstractStateSpaceSet{D,T}
-A dedicated interface for datasets.
-It contains *equally-sized datapoints* of length `D`, represented by `SVector{D, T}`.
-These data are a standard Julia `Vector{SVector}`, and can be obtained with
-`vec(dataset)`.
+    StateSpaceSet{D, T} <: AbstractStateSpaceSet{D,T}
 
-When indexed with 1 index, a `dataset` is like a vector of datapoints.
+A dedicated interface for sets in a state space.
+It is an **ordered container of equally-sized points** of length `D`.
+Each point is represented by `SVector{D, T}`.
+The data are a standard Julia `Vector{SVector}`, and can be obtained with
+`parent(ssset::StateSpaceSet)`.
+Typically the order of points in the set is the time direction, but it doesn't have to be.
+
+When indexed with 1 index, `StateSpaceSet` is like a vector of points.
 When indexed with 2 indices it behaves like a matrix that has each of the columns be the
 timeseries of each of the variables.
+When iterated over, it iterates over its contained points.
+See description of indexing below for more.
 
-`Dataset` also supports most sensible operations like `append!, push!, hcat, eachrow`,
-among others, and when iterated over, it iterates over its contained points.
+`StateSpaceSet` also supports almost all sensible vector operations like
+`append!, push!, hcat, eachrow`,
+among others.
 
 ## Description of indexing
-In the following let `i, j` be integers,  `typeof(data) <: AbstractStateSpaceSet`
+
+In the following let `i, j` be integers, `typeof(X) <: AbstractStateSpaceSet`
 and `v1, v2` be `<: AbstractVector{Int}` (`v1, v2` could also be ranges,
-and for massive performance benefits make `v2` an `SVector{X, Int}`).
+and for performance benefits make `v2` an `SVector{Int}`).
 
-* `data[i] == data[i, :]` gives the `i`th datapoint (returns an `SVector`)
-* `data[v1] == data[v1, :]`, returns a `Dataset` with the points in those indices.
-* `data[:, j]` gives the `j`th variable timeseries, as `Vector`
-* `data[v1, v2], data[:, v2]` returns a `Dataset` with the appropriate entries (first indices
+* `X[i] == X[i, :]` gives the `i`th point (returns an `SVector`)
+* `X[v1] == X[v1, :]`, returns a `StateSpaceSet` with the points in those indices.
+* `X[:, j]` gives the `j`th variable timeseries (or collection), as `Vector`
+* `X[v1, v2], X[:, v2]` returns a `StateSpaceSet` with the appropriate entries (first indices
   being "time"/point index, while second being variables)
-* `data[i, j]` value of the `j`th variable, at the `i`th timepoint
+* `X[i, j]` value of the `j`th variable, at the `i`th timepoint
 
-Use `Matrix(dataset)` or `Dataset(matrix)` to convert. It is assumed
+Use `Matrix(ssset)` or `StateSpaceSet(matrix)` to convert. It is assumed
 that each *column* of the `matrix` is one variable.
 If you have various timeseries vectors `x, y, z, ...` pass them like
-`Dataset(x, y, z, ...)`. You can use `columns(dataset)` to obtain the reverse,
+`StateSpaceSet(x, y, z, ...)`. You can use `columns(dataset)` to obtain the reverse,
 i.e. all columns of the dataset in a tuple.
 """
-struct Dataset{D, T} <: AbstractStateSpaceSet{D,T}
+struct StateSpaceSet{D, T} <: AbstractStateSpaceSet{D,T}
     data::Vector{SVector{D,T}}
 end
 # Empty dataset:
-Dataset{D, T}() where {D,T} = Dataset(SVector{D,T}[])
+StateSpaceSet{D, T}() where {D,T} = StateSpaceSet(SVector{D,T}[])
 
 # Identity constructor:
-Dataset{D, T}(s::Dataset{D, T}) where {D,T} = s
-Dataset(s::Dataset) = s
+StateSpaceSet{D, T}(s::StateSpaceSet{D, T}) where {D,T} = s
+StateSpaceSet(s::StateSpaceSet) = s
 
 ###########################################################################
-# Dataset(Vectors of stuff)
+# StateSpaceSet(Vectors of stuff)
 ###########################################################################
-Dataset(s::AbstractVector{T}) where {T} = Dataset(SVector.(s))
+StateSpaceSet(s::AbstractVector{T}) where {T} = StateSpaceSet(SVector.(s))
 
-function Dataset(v::Vector{<:AbstractArray{T}}) where {T<:Number}
+function StateSpaceSet(v::Vector{<:AbstractArray{T}}) where {T<:Number}
     D = length(v[1])
     @assert length(unique!(length.(v))) == 1 "All input vectors must have same length"
-    D > 100 && @warn "You are attempting to make a Dataset of dimensions > 100"
+    D > 100 && @warn "You are attempting to make a StateSpaceSet of dimensions > 100"
     L = length(v)
     data = Vector{SVector{D, T}}(undef, L)
     for i in 1:length(v)
         D != length(v[i]) && throw(ArgumentError(
-        "All data-points in a Dataset must have same size"
+        "All data-points in a StateSpaceSet must have same size"
         ))
         @inbounds data[i] = SVector{D,T}(v[i])
     end
-    return Dataset{D, T}(data)
+    return StateSpaceSet{D, T}(data)
 end
 
 @generated function _dataset(vecs::Vararg{<:AbstractVector{T},D}) where {D, T}
     gens = [:(vecs[$k][i]) for k=1:D]
-    D > 100 && @warn "You are attempting to make a Dataset of dimensions > 100"
+    D > 100 && @warn "You are attempting to make a StateSpaceSet of dimensions > 100"
     quote
         L = typemax(Int)
         for x in vecs
@@ -221,16 +228,16 @@ end
     end
 end
 
-function Dataset(vecs::Vararg{<:AbstractVector{T}}) where {T}
-    return Dataset(_dataset(vecs...))
+function StateSpaceSet(vecs::Vararg{<:AbstractVector{T}}) where {T}
+    return StateSpaceSet(_dataset(vecs...))
 end
 
-Dataset(xs::Vararg{Union{AbstractVector, AbstractStateSpaceSet}}) = hcat(xs...)
-Dataset(x::Vector{<:Real}, y::AbstractStateSpaceSet{D, T}) where {D, T} = hcat(x, y)
-Dataset(x::AbstractStateSpaceSet{D, T}, y::Vector{<:Real}) where {D, T} = hcat(x, y)
+StateSpaceSet(xs::Vararg{Union{AbstractVector, AbstractStateSpaceSet}}) = hcat(xs...)
+StateSpaceSet(x::Vector{<:Real}, y::AbstractStateSpaceSet{D, T}) where {D, T} = hcat(x, y)
+StateSpaceSet(x::AbstractStateSpaceSet{D, T}, y::Vector{<:Real}) where {D, T} = hcat(x, y)
 
 #####################################################################################
-#                                Dataset <-> Matrix                                 #
+#                                StateSpaceSet <-> Matrix                                 #
 #####################################################################################
 function Base.Matrix{S}(d::AbstractStateSpaceSet{D,T}) where {S, D, T}
     mat = Matrix{S}(undef, length(d), D)
@@ -243,19 +250,19 @@ function Base.Matrix{S}(d::AbstractStateSpaceSet{D,T}) where {S, D, T}
 end
 Base.Matrix(d::AbstractStateSpaceSet{D,T}) where {D, T} = Matrix{T}(d)
 
-function Dataset(mat::AbstractMatrix{T}; warn = true) where {T}
+function StateSpaceSet(mat::AbstractMatrix{T}; warn = true) where {T}
     N, D = size(mat)
-    warn && D > 100 && @warn "You are attempting to make a Dataset of dimensions > 100"
-    warn && D > N && @warn "You are attempting to make a Dataset of a matrix with more columns than rows."
-    Dataset{D,T}(reshape(reinterpret(SVector{D,T}, vec(transpose(mat))), (N,)))
+    warn && D > 100 && @warn "You are attempting to make a StateSpaceSet of dimensions > 100"
+    warn && D > N && @warn "You are attempting to make a StateSpaceSet of a matrix with more columns than rows."
+    StateSpaceSet{D,T}(reshape(reinterpret(SVector{D,T}, vec(transpose(mat))), (N,)))
 end
 
 #####################################################################################
 #                                   Pretty Printing                                 #
 #####################################################################################
-function Base.summary(d::Dataset{D, T}) where {D, T}
+function Base.summary(d::StateSpaceSet{D, T}) where {D, T}
     N = length(d)
-    return "$D-dimensional Dataset{$(T)} with $N points"
+    return "$D-dimensional StateSpaceSet{$(T)} with $N points"
 end
 
 function matstring(d::AbstractStateSpaceSet{D, T}) where {D, T}
@@ -358,11 +365,11 @@ end
 using Statistics
 
 """
-    standardize(d::Dataset) → r
+    standardize(d::StateSpaceSet) → r
 Create a standardized version of the input dataset where each timeseries (column)
 is transformed to have mean 0 and standard deviation 1.
 """
-standardize(d::AbstractStateSpaceSet) = Dataset(standardized_timeseries(d)[1]...)
+standardize(d::AbstractStateSpaceSet) = StateSpaceSet(standardized_timeseries(d)[1]...)
 function standardized_timeseries(d::AbstractStateSpaceSet)
     xs = columns(d)
     means = mean.(xs)

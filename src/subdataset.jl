@@ -22,14 +22,14 @@ end
 
 function Base.summary(sd::SubDataset{D, T}) where {D, T}
     N = length(sd)
-    return "$N-element view of $D-dimensional Dataset{$(T)}"
+    return "$N-element view of $D-dimensional StateSpaceSet{$(T)}"
 end
 
 Base.parent(sd::SubDataset) = sd.parent
 Base.parentindices(sd::SubDataset) = parentindices(sd.data)
 
 """
-    view(d::Dataset, indices)
+    view(d::StateSpaceSet, indices)
 
 Return a view into the parent dataset `d`, as a [`SubDataset`](@ref)
 that contains the datapoints of `d` referred to by `indices`.
@@ -37,5 +37,5 @@ that contains the datapoints of `d` referred to by `indices`.
 Base.view(d::AbstractStateSpaceSet, i) = SubDataset(d, view(d.data, i))
 
 function Base.view(::AbstractStateSpaceSet, ::Any, ::Any, ::Vararg)
-    throw(ArgumentError("Dataset views only accept indices on one dimension"))
+    throw(ArgumentError("StateSpaceSet views only accept indices on one dimension"))
 end
