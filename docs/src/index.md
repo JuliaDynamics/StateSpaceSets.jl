@@ -57,7 +57,7 @@ Centroid
 ```
 ### Sets of datasets
 ```@docs
-datasets_sets_distances
+setsofsets_distance
 ```
 
 
