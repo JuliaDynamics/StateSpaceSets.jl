@@ -77,7 +77,7 @@ println("\nTesting StateSpaceSet...")
     e = data[5, SVector(1,2)]
     @test e isa SVector{2, Float64}
 
-    sub = @view data[11:20]
+    sub = view(data, 11:20)
     @test sub isa StateSpaceSets.SubStateSpaceSet
     @test sub[2] == data[12]
     @test dimension(sub) == dimension(data)

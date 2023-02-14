@@ -7,7 +7,7 @@ A dedicated interface for sets in a state space.
 It is an **ordered container of equally-sized points** of length `D`.
 Each point is represented by `SVector{D, T}`.
 The data are a standard Julia `Vector{SVector}`, and can be obtained with
-`parent(ssset::StateSpaceSet)`.
+`vec(ssset::StateSpaceSet)`.
 Typically the order of points in the set is the time direction, but it doesn't have to be.
 
 When indexed with 1 index, `StateSpaceSet` is like a vector of points.

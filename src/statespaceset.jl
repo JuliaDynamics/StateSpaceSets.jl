@@ -14,7 +14,7 @@ Return the dimension of the `thing`, in the sense of state-space dimensionality.
 """
 dimension(::AbstractStateSpaceSet{D,T}) where {D,T} = D
 Base.eltype(::AbstractStateSpaceSet{D,T}) where {D,T} = T
-Base.parent(X::AbstractStateSpaceSet{D,T}) where {D,T} = X.data
+Base.vec(X::AbstractStateSpaceSet{D,T}) where {D,T} = X.data
 @inline Base.size(d::AbstractStateSpaceSet{D,T}) where {D,T} = (length(d.data), D)
 @inline Base.size(d::AbstractStateSpaceSet, i) = size(d)[i]
 
@@ -33,10 +33,10 @@ columns(x::AbstractVector{<:Real}) = (x, )
 # Base extensions
 ###########################################################################################
 for f in (
-        :length, :vec, :sort!, :IteratorSize, :iterate, :eachindex, :eachrow,
+        :length, :sort!, :IteratorSize, :iterate, :eachindex, :eachrow,
         :firstindex,
     )
-    @eval Base.$(f)(d::AbstractStateSpaceSet, args...) = $(f)(parent(d), args...)
+    @eval Base.$(f)(d::AbstractStateSpaceSet, args...) = $(f)(vec(d), args...)
 end
 
 Base.:(==)(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = d1.data == d2.data
