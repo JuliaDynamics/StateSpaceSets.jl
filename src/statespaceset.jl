@@ -2,7 +2,7 @@ using StaticArraysCore, LinearAlgebra
 using Base.Iterators: flatten
 
 export StateSpaceSet, AbstractStateSpaceSet, minima, maxima
-export SVector, SMatrix, @SVector, @SMatrix
+export SVector, SMatrix
 export minmaxima, columns, standardize, dimension
 
 abstract type AbstractStateSpaceSet{D, T} end
