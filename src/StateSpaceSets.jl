@@ -11,6 +11,7 @@ To install it, run `import Pkg; Pkg.add("StateSpaceSets")`.
 module StateSpaceSets
 
 include("statespaceset.jl")
+include("statespaceset_concrete.jl")
 include("subdataset.jl")
 include("timeseries.jl")
 include("neighborhoods.jl")
