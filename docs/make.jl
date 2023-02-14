@@ -34,7 +34,7 @@ STATESPACESETS_PAGES = [
 ]
 
 makedocs(
-    modules = [StateSpaceSets],
+    modules = [StateSpaceSets, Neighborhood],
     format = Documenter.HTML(
         prettyurls = CI,
         assets = [

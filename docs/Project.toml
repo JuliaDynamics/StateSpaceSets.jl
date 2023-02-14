@@ -1,4 +1,5 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterTools = "35a29f4d-8980-5a13-9543-d66fff28ecb8"
+Neighborhood = "645ca80c-8b79-4109-87ea-e1f58159d116"
 StateSpaceSets = "40b095a5-5852-4c12-98c7-d43bf788e795"
