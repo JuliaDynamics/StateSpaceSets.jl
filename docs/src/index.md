@@ -51,7 +51,7 @@ columns
 ## Dataset distances
 ### Two datasets
 ```@docs
-dataset_distance
+set_distance
 Hausdorff
 Centroid
 ```

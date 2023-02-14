@@ -10,7 +10,7 @@ abstract type AbstractDataset{D, T} end
 # TODO: Many of these extensions can be wrapped in a simple block like:
 # for f in (:length, :size, :eachindex, :eltype,
 #     :lastindex, :firstindex, :vec, :getindex, :iterate)
-#     @eval Base.$(f)(d::AbsractDataset, args...) = $(f)(d.data, args...)
+#     @eval Base.$(f)(d::AbsractDataset, args...) = $(f)(parent(d), args...)
 # end
 
 """

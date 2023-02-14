@@ -1,11 +1,12 @@
-export dataset_distance, datasets_sets_distances
+export set_distance, datasets_sets_distances
 export Centroid, Hausdorff, StrictlyMinimumDistance
 
 ###########################################################################################
 # Dataset distance
 ###########################################################################################
 """
-    dataset_distance(dataset1, dataset2 [, method])
+    set_distance(dataset1, dataset2 [, method])
+
 Calculate a distance between two `AbstractDatasets`,
 i.e., a distance defined between sets of points, as dictated by `method`.
 
@@ -14,11 +15,11 @@ The possible `methods` are:
 - [`Hausdorff`](@ref)
 - [`StrictlyMinimumDistance`](@ref)
 """
-dataset_distance(d1, d2) = dataset_distance(d1, d2, Centroid())
+set_distance(d1, d2) = set_distance(d1, d2, Centroid())
 
 """
     Centroid(metric = Euclidean())
-A dataset distance that can be used in [`dataset_distance`](@ref).
+A dataset distance that can be used in [`set_distance`](@ref).
 The `Centroid` method returns the distance (according to `metric`) between the
 [centroids](https://en.wikipedia.org/wiki/Centroid) (a.k.a. center of mass) of the datasets.
 
@@ -30,7 +31,7 @@ struct Centroid{M}
 end
 Centroid() = Centroid(Euclidean())
 
-function dataset_distance(d1::AbstractDataset, d2::AbstractDataset, c::Centroid)
+function set_distance(d1::AbstractDataset, d2::AbstractDataset, c::Centroid)
     c1, c2 = centroid(d1), centroid(d2)
     return c.metric(c1, c2)
 end
@@ -38,7 +39,7 @@ centroid(A::AbstractDataset) = sum(A)/length(A)
 
 """
     Hausdorff(metric = Euclidean())
-A dataset distance that can be used in [`dataset_distance`](@ref).
+A dataset distance that can be used in [`set_distance`](@ref).
 The [Hausdorff distance](https://en.wikipedia.org/wiki/Hausdorff_distance) is the
 greatest of all the distances from a point in one set to the closest point in the other set.
 The distance is calculated with the metric given to `Hausdorff` which defaults to Euclidean.
@@ -51,7 +52,7 @@ struct Hausdorff{M<:Metric}
 end
 Hausdorff() = Hausdorff(Euclidean())
 
-function dataset_distance(d1::AbstractDataset, d2, h::Hausdorff,
+function set_distance(d1::AbstractDataset, d2, h::Hausdorff,
         # trees given for a natural way to call this function in `datasets_sets_distances`
         tree1 = KDTree(d1, h.metric),
         tree2 = KDTree(d2, h.metric),
@@ -63,7 +64,7 @@ end
 
 """
     StrictlyMinimumDistance([brute = false,] [metric = Euclidean(),])
-A dataset distance that can be used in [`dataset_distance`](@ref).
+A dataset distance that can be used in [`set_distance`](@ref).
 The `StrictlyMinimumDistance` returns the minimum distance of all the distances from a
 point in one set to the closest point in the other set.
 The distance is calculated with the given metric.
@@ -72,7 +73,7 @@ The `brute::Bool` argument switches the computation between a KDTree-based versi
 or brute force (i.e., calculation of all distances and picking the smallest one).
 Brute force performs better for datasets that are either large dimensional or
 have a small amount of points. Deciding a cutting point is not trivial,
-and is recommended to simply benchmark the [`dataset_distance`](@ref) function to
+and is recommended to simply benchmark the [`set_distance`](@ref) function to
 make a decision.
 """
 struct StrictlyMinimumDistance{M<:Metric}
@@ -83,7 +84,7 @@ StrictlyMinimumDistance() = StrictlyMinimumDistance(false, Euclidean())
 StrictlyMinimumDistance(m::Metric) = StrictlyMinimumDistance(false, m)
 StrictlyMinimumDistance(brute::Bool) = StrictlyMinimumDistance(brute, Euclidean())
 
-function dataset_distance(d1, d2::AbstractDataset, m::StrictlyMinimumDistance)
+function set_distance(d1, d2::AbstractDataset, m::StrictlyMinimumDistance)
     if m.brute
         return dataset_distance_brute(d1, d2, m.metric)
     else
@@ -132,7 +133,7 @@ of distances. Specifically, `distances[i][j]` is the distance of the dataset in
 the `i` key of `a₊` to the `j` key of `a₋`. Notice that distances from `a₋` to
 `a₊` are not computed at all (assumming symmetry in the distance function).
 
-The `method` can be as in [`dataset_distance`](@ref).
+The `method` can be as in [`set_distance`](@ref).
 However, `method` can also be any arbitrary user function that takes as input
 two datasets and returns any positive-definite number as their "distance".
 """
@@ -166,8 +167,8 @@ function _datasets_sets_distances!(distances, a₊, a₋, method::Hausdorff)
         distances[k] = pairs(valtype(distances)())
         tree1 = trees₊[k]
         for (m, tree2) in trees₋
-            # Internal method of `dataset_distance` for Hausdorff
-            d = dataset_distance(A, a₋[m], method, tree1, tree2)
+            # Internal method of `set_distance` for Hausdorff
+            d = set_distance(A, a₋[m], method, tree1, tree2)
             distances[k][m] = d
         end
     end
@@ -193,7 +194,7 @@ function _datasets_sets_distances!(distances, a₊, a₋, method::StrictlyMinimu
         distances[k] = pairs(valtype(distances)())
         for (m, B) in pairs(a₋)
             if method.brute == false
-                # Internal method of `dataset_distance` for non-brute way
+                # Internal method of `set_distance` for non-brute way
                 d = dataset_distance_tree(A, search_trees[m])
             else
                 d = dataset_distance_brute(A, B, method.metric)

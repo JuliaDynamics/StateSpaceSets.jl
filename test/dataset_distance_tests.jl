@@ -4,20 +4,20 @@ using Test, StateSpaceSets
     @testset "metric" begin
         d1 = float.(range(1, 10; length = 11))
         d2 = d1 .+ 10
-        @test dataset_distance(Dataset(d1), Dataset(d2), StrictlyMinimumDistance()) == 1.0
-        @test dataset_distance(Dataset(d1), Dataset(d2), StrictlyMinimumDistance(true)) == 1.0
+        @test set_distance(Dataset(d1), Dataset(d2), StrictlyMinimumDistance()) == 1.0
+        @test set_distance(Dataset(d1), Dataset(d2), StrictlyMinimumDistance(true)) == 1.0
         d1 = Dataset([SVector(0.0, 1)])
         d2 = Dataset([SVector(1.0, 2)])
-        @test dataset_distance(d1, d2, StrictlyMinimumDistance(Chebyshev())) == 1.0
+        @test set_distance(d1, d2, StrictlyMinimumDistance(Chebyshev())) == 1.0
     end
 
     @testset "Hausdorff" begin
         d1 = float.(range(1, 10; length = 11))
         d2 = d1 .+ 10
-        @test dataset_distance(Dataset(d1), Dataset(d2), Hausdorff()) == 10.0
+        @test set_distance(Dataset(d1), Dataset(d2), Hausdorff()) == 10.0
         d1 = Dataset([SVector(0.0, 1)])
         d2 = Dataset([SVector(1.0, 2), SVector(1.0, 3)])
-        @test dataset_distance(d1, d2, Hausdorff(Chebyshev())) == 2.0
+        @test set_distance(d1, d2, Hausdorff(Chebyshev())) == 2.0
     end
 
     @testset "Centroid" begin
@@ -25,11 +25,11 @@ using Test, StateSpaceSets
         d1 = Dataset([SVector(0.0, 0.0), SVector(0.0, 1.0)])
         # centroid is 1, 0.5
         d2 = Dataset([SVector(1.0, 0.0), SVector(1.0, 1.0)])
-        @test dataset_distance(d1, d2, Centroid()) == 1.0
-        @test dataset_distance(d1, d2, Centroid(Chebyshev())) == 1.0
+        @test set_distance(d1, d2, Centroid()) == 1.0
+        @test set_distance(d1, d2, Centroid(Chebyshev())) == 1.0
         # And also with custom function
         custom_f(x, y) = abs(x[2] - y[2])
-        @test dataset_distance(d1, d2, Centroid(custom_f)) == 0.0
+        @test set_distance(d1, d2, Centroid(custom_f)) == 0.0
     end
 
 end

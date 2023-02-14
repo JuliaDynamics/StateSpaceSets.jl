@@ -14,7 +14,7 @@ include("dataset.jl")
 include("subdataset.jl")
 include("timeseries.jl")
 include("neighborhoods.jl")
-include("dataset_distance.jl")
+include("set_distance.jl")
 include("utils.jl")
 include("sampler.jl")
 
