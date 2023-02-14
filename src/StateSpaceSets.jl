@@ -12,7 +12,6 @@ module StateSpaceSets
 
 include("statespaceset.jl")
 include("statespaceset_concrete.jl")
-include("subdataset.jl")
 include("timeseries.jl")
 include("neighborhoods.jl")
 include("set_distance.jl")
