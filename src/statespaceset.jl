@@ -33,8 +33,7 @@ columns(x::AbstractVector{<:Real}) = (x, )
 # Base extensions
 ###########################################################################################
 for f in (
-        :length, :sort!, :IteratorSize, :iterate, :eachindex, :eachrow,
-        :firstindex,
+        :length, :sort!, :iterate, :eachindex, :eachrow, :firstindex,
     )
     @eval Base.$(f)(d::AbstractStateSpaceSet, args...; kwargs...) = $(f)(vec(d), args...; kwargs...)
 end
@@ -43,6 +42,7 @@ Base.:(==)(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = d1.data == d2
 Base.copy(d::AbstractStateSpaceSet) = typeof(d)(copy(d.data))
 Base.sort(d::AbstractStateSpaceSet) = sort!(copy(d))
 @inline Base.eltype(::Type{<:AbstractStateSpaceSet{D, T}}) where {D, T} = SVector{D, T}
+@inline Base.IteratorSize(::Type{<:AbstractStateSpaceSet}) = HasLength()
 Base.eachcol(ds::AbstractStateSpaceSet) = (ds[:, i] for i in 1:size(ds, 2))
 
 ###########################################################################################

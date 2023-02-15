@@ -4,7 +4,8 @@ using Statistics
 println("\nTesting StateSpaceSet...")
 
 @testset "StateSpaceSet" begin
-  data = StateSpaceSet(rand(1001,3))
+  original = rand(1001,3)
+  data = StateSpaceSet(original)
   xs = columns(data)
 
   @testset "Basics" begin
@@ -13,6 +14,12 @@ println("\nTesting StateSpaceSet...")
     @test StateSpaceSet(x, y,) isa StateSpaceSet
     @test StateSpaceSet(x, y, y) isa StateSpaceSet
     @test size(StateSpaceSet(x, y)) == (10, 4)
+  end
+
+  @testset "iteration" begin
+    for (i, point) in enumerate(data)
+      @test point == original[i, :]
+    end
   end
 
   @testset "Concatenation/Append" begin
