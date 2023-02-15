@@ -20,6 +20,9 @@ println("\nTesting StateSpaceSet...")
     for (i, point) in enumerate(data)
       @test point == original[i, :]
     end
+    q = map(x -> x[1], data)
+    @test length(q) == length(data)
+    @test q isa Vector{Float64}
   end
 
   @testset "Concatenation/Append" begin
