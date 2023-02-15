@@ -36,7 +36,7 @@ for f in (
         :length, :sort!, :IteratorSize, :iterate, :eachindex, :eachrow,
         :firstindex,
     )
-    @eval Base.$(f)(d::AbstractStateSpaceSet, args...) = $(f)(vec(d), args...)
+    @eval Base.$(f)(d::AbstractStateSpaceSet, args...; kwargs...) = $(f)(vec(d), args...; kwargs...)
 end
 
 Base.:(==)(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = d1.data == d2.data
