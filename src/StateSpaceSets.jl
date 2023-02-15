@@ -23,5 +23,6 @@ include("neighborhoods.jl")
 include("set_distance.jl")
 include("utils.jl")
 include("sampler.jl")
+include("deprecations.jl")
 
 end # module StateSpaceSets
