@@ -5,12 +5,12 @@ export Centroid, Hausdorff, StrictlyMinimumDistance
 # StateSpaceSet distance
 ###########################################################################################
 """
-    set_distance(dataset1, dataset2 [, method])
+    set_distance(dataset1, dataset2 [, distance])
 
 Calculate a distance between two `AbstractDatasets`,
-i.e., a distance defined between sets of points, as dictated by `method`.
+i.e., a distance defined between sets of points, as dictated by `distance`.
 
-The possible `methods` are:
+Possible `distance` are:
 - [`Centroid`](@ref), which is the default, and 100s of times faster than the rest
 - [`Hausdorff`](@ref)
 - [`StrictlyMinimumDistance`](@ref)
@@ -129,7 +129,7 @@ end
 # Sets of datasets distance
 ###########################################################################################
 """
-    setsofsets_distance(a₊, a₋ [, method]) → distances
+    setsofsets_distance(a₊, a₋ [, distance]) → distances
 
 Calculate distances between sets of `StateSpaceSet`s. Here  `a₊, a₋` are containers of
 `StateSpaceSet`s, and the returned distances are dictionaries of
@@ -137,8 +137,8 @@ of distances. Specifically, `distances[i][j]` is the distance of the set in
 the `i` key of `a₊` to the `j` key of `a₋`. Notice that distances from `a₋` to
 `a₊` are not computed at all (assumming symmetry in the distance function).
 
-The `method` can be as in [`set_distance`](@ref).
-However, `method` can also be any arbitrary user function that takes as input
+The `distance` can be as in [`set_distance`](@ref).
+However, `distance` can also be any arbitrary user function that takes as input
 two datasets and returns any positive-definite number as their "distance".
 """
 function setsofsets_distance(a₊, a₋, method = Centroid())
