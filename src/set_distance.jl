@@ -1,4 +1,4 @@
-export set_distance, setsofsets_distance
+export set_distance, setsofsets_distances
 export Centroid, Hausdorff, StrictlyMinimumDistance
 
 ###########################################################################################
@@ -55,7 +55,7 @@ end
 Hausdorff() = Hausdorff(Euclidean())
 
 function set_distance(d1::AbstractStateSpaceSet, d2, h::Hausdorff,
-        # trees given for a natural way to call this function in `setsofsets_distance`
+        # trees given for a natural way to call this function in `setsofsets_distances`
         tree1 = KDTree(d1, h.metric),
         tree2 = KDTree(d2, h.metric),
     )
@@ -129,7 +129,7 @@ end
 # Sets of datasets distance
 ###########################################################################################
 """
-    setsofsets_distance(a₊, a₋ [, distance]) → distances
+    setsofsets_distances(a₊, a₋ [, distance]) → distances
 
 Calculate distances between sets of `StateSpaceSet`s. Here  `a₊, a₋` are containers of
 `StateSpaceSet`s, and the returned distances are dictionaries of
@@ -141,7 +141,7 @@ The `distance` can be as in [`set_distance`](@ref).
 However, `distance` can also be any arbitrary user function that takes as input
 two datasets and returns any positive-definite number as their "distance".
 """
-function setsofsets_distance(a₊, a₋, method = Centroid())
+function setsofsets_distances(a₊, a₋, method = Centroid())
     (isempty(a₊) || isempty(a₋)) && error("The set containers must be non-empty.")
     ids₊, ids₋ = keys(a₊), keys(a₋)
     gettype = a -> eltype(first(values(a)))

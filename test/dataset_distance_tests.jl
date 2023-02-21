@@ -51,7 +51,7 @@ end
         for set in (set1, set2)
 
             offset = method isa Hausdorff ? 9 : 0
-            dsds = setsofsets_distance(set, set, method)
+            dsds = setsofsets_distances(set, set, method)
             for i in 1:3
                 @test dsds[i][i] == 0
             end
@@ -63,7 +63,7 @@ end
     @testset "works with dicts" begin
         setx = Dict("x" => d1)
         sety = Dict("y" => d1)
-        dsds = setsofsets_distance(setx, sety)
+        dsds = setsofsets_distances(setx, sety)
         @test dsds["x"]["y"] == 0
     end
 
@@ -71,7 +71,7 @@ end
         d4  = d3[1:3]
         set3 = StateSpaceSet.([d1, d2, d4])
         f = (d1, d2) -> abs(length(d1) - length(d2))
-        dsds = setsofsets_distance(set3, set3, f)
+        dsds = setsofsets_distances(set3, set3, f)
         @test dsds[2][3] == dsds[3][2] == 8
         @test dsds[2][1] == dsds[1][2] == 0
     end
@@ -80,7 +80,7 @@ end
         d1 = StateSpaceSet([SVector(0.0, 0.0), SVector(0.0, 1.0)])
         d2 = StateSpaceSet([SVector(1.0, 0.0), SVector(1.0, 1.0)])
         set1 = [d1, d2]
-        dsds = setsofsets_distance(set1, set1, Centroid())
+        dsds = setsofsets_distances(set1, set1, Centroid())
         @test dsds[1][1] == 0
         @test dsds[2][1] == 1
         @test dsds[1][2] == 1
