@@ -18,7 +18,7 @@ The regions can be:
   be either `"uniform"` or `"multgauss"`.
 * **Sphere**, of `spheredims` dimensions, radius `radius` and centered on `center`.
 """
-function statespace_sampler(rng = Random.GLOBAL_RNG;
+function statespace_sampler(rng::AbstractRNG = Random.GLOBAL_RNG;
         min_bounds=[], max_bounds=[], method="uniform",
         radius::Number=-1,
         spheredims::Int=0, center=zeros(spheredims),
@@ -40,6 +40,18 @@ function statespace_sampler(rng = Random.GLOBAL_RNG;
     return gen, isinside
 end
 
+"""
+    statespace_sampler(grid::NTuple{N, AbstractRange} [, rng])
+If given a `grid` that is a tuple of ranges, the minimum and maximum of the ranges
+are used as the `min_bounds` and `max_bounds` keywords.
+"""
+function statespace_sampler(
+        grid::NTuple{N, AbstractRange}, rng::AbstractRNG = Random.GLOBAL_RNG
+    ) where {N}
+    return statespace_sampler(rng;
+        min_bounds = minimum.(grid), max_bounds = maximum.(grid)
+    )
+end
 
 function boxregion_multgauss(as, bs, rng)
     @assert length(as) == length(bs) > 0
