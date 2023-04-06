@@ -5,12 +5,13 @@ export Centroid, Hausdorff, StrictlyMinimumDistance
 # StateSpaceSet distance
 ###########################################################################################
 """
-    set_distance(dataset1, dataset2 [, distance])
+    set_distance(ssset1, ssset2 [, distance])
 
-Calculate a distance between two `AbstractDatasets`,
+Calculate a distance between two `StateSpaceSet`s,
 i.e., a distance defined between sets of points, as dictated by `distance`.
 
-Possible `distance` are:
+Possible `distance` types are:
+
 - [`Centroid`](@ref), which is the default, and 100s of times faster than the rest
 - [`Hausdorff`](@ref)
 - [`StrictlyMinimumDistance`](@ref)
@@ -47,7 +48,7 @@ greatest of all the distances from a point in one set to the closest point in th
 The distance is calculated with the metric given to `Hausdorff` which defaults to Euclidean.
 
 `Hausdorff` is 2x slower than [`StrictlyMinimumDistance`](@ref), however it is
-a proper metric in the space of sets of datasets.
+a proper metric in the space of sets of state space sets.
 """
 struct Hausdorff{M<:Metric}
     metric::M
@@ -139,7 +140,7 @@ the `i` key of `a₊` to the `j` key of `a₋`. Notice that distances from `a₋
 
 The `distance` can be as in [`set_distance`](@ref).
 However, `distance` can also be any arbitrary user function that takes as input
-two datasets and returns any positive-definite number as their "distance".
+two state space sets and returns any positive-definite number as their "distance".
 """
 function setsofsets_distances(a₊, a₋, method = Centroid())
     (isempty(a₊) || isempty(a₋)) && error("The set containers must be non-empty.")
@@ -147,10 +148,10 @@ function setsofsets_distances(a₊, a₋, method = Centroid())
     gettype = a -> eltype(first(values(a)))
     T = promote_type(gettype(a₊), gettype(a₋))
     distances = Dict{eltype(ids₊), Dict{eltype(ids₋), T}}()
-    _datasets_sets_distances!(distances, a₊, a₋, method)
+    _setsofsets_distances!(distances, a₊, a₋, method)
 end
 
-function _datasets_sets_distances!(distances, a₊, a₋, c::Centroid)
+function _setsofsets_distances!(distances, a₊, a₋, c::Centroid)
     centroids₋ = Dict(k => centroid(v) for (k, v) in pairs(a₋))
     @inbounds for (k, A) in pairs(a₊)
         distances[k] = pairs(valtype(distances)())
@@ -162,7 +163,7 @@ function _datasets_sets_distances!(distances, a₊, a₋, c::Centroid)
     return distances
 end
 
-function _datasets_sets_distances!(distances, a₊, a₋, method::Hausdorff)
+function _setsofsets_distances!(distances, a₊, a₋, method::Hausdorff)
     @assert keytype(a₊) == keytype(a₋)
     metric = method.metric
     trees₊ = Dict(m => KDTree(vec(att), metric) for (m, att) in pairs(a₊))
@@ -179,7 +180,7 @@ function _datasets_sets_distances!(distances, a₊, a₋, method::Hausdorff)
     return distances
 end
 
-function _datasets_sets_distances!(distances, a₊, a₋, f::Function)
+function _setsofsets_distances!(distances, a₊, a₋, f::Function)
     @inbounds for (k, A) in pairs(a₊)
         distances[k] = pairs(valtype(distances)())
         for (m, B) in pairs(a₋)
@@ -189,7 +190,7 @@ function _datasets_sets_distances!(distances, a₊, a₋, f::Function)
     return distances
 end
 
-function _datasets_sets_distances!(distances, a₊, a₋, method::StrictlyMinimumDistance)
+function _setsofsets_distances!(distances, a₊, a₋, method::StrictlyMinimumDistance)
     @assert keytype(a₊) == keytype(a₋)
     if method.brute == false
         search_trees = Dict(m => KDTree(vec(att), method.metric) for (m, att) in pairs(a₋))
