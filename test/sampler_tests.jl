@@ -43,7 +43,7 @@ function test_statespace_sampler_multivariate_gaussian_box()
 end
 
 # Test statespace_sampler with sphere method
-function test_statespace_sampler_sphere()
+function test_statespace_sampler_sphere_3D()
     rng = MersenneTwister(1234)  # Seed random number generator for reproducibility
 
     # Define sphere region
@@ -61,9 +61,30 @@ function test_statespace_sampler_sphere()
     end
 end
 
+# Test statespace_sampler with sphere method
+function test_statespace_sampler_sphere_4D()
+    rng = MersenneTwister(1234)  # Seed random number generator for reproducibility
+
+    # Define sphere region
+    radius = 2
+    spheredims = 4
+    center = [1, 2, 3, 7]
+
+    # Generate sampler and isinside functions
+    gen, isinside = statespace_sampler(rng; radius=radius, spheredims=spheredims, center=center)
+
+    # Test generated points are inside the sphere region
+    for i in 1:250
+        x = gen()
+        @test isinside(x)
+    end
+end
+
 
 # Run tests
     test_statespace_sampler_rectangular_box()
     test_statespace_sampler_multivariate_gaussian_box()
-    test_statespace_sampler_sphere()
+    test_statespace_sampler_sphere_3D()
+    test_statespace_sampler_sphere_4D()
+
 end
