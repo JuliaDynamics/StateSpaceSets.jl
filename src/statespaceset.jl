@@ -15,19 +15,10 @@ Return the dimension of the `thing`, in the sense of state-space dimensionality.
 dimension(::AbstractStateSpaceSet{D,T}) where {D,T} = D
 Base.eltype(::AbstractStateSpaceSet{D,T}) where {D,T} = T
 Base.vec(X::AbstractStateSpaceSet{D,T}) where {D,T} = X.data
-@inline Base.size(d::AbstractStateSpaceSet{D,T}) where {D,T} = (length(d.data), D)
-@inline Base.size(d::AbstractStateSpaceSet, i) = size(d)[i]
 
-"""
-    columns(dataset) -> x, y, z, ...
-Return the individual columns of the dataset.
-"""
-function columns end
-@generated function columns(data::AbstractStateSpaceSet{D, T}) where {D, T}
-    gens = [:(data[:, $k]) for k=1:D]
-    quote tuple($(gens...)) end
-end
-columns(x::AbstractVector{<:Real}) = (x, )
+# TODO: This will break once we make SSS <: AbstractVector
+@inline Base.size(d::AbstractStateSpaceSet{D,T}) where {D,T} = (length(vec(d)), D)
+@inline Base.size(d::AbstractStateSpaceSet, i) = size(d)[i]
 
 ###########################################################################################
 # Base extensions
@@ -39,31 +30,43 @@ for f in (
 end
 
 Base.:(==)(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = d1.data == d2.data
-Base.copy(d::AbstractStateSpaceSet) = typeof(d)(copy(d.data))
+Base.copy(d::AbstractStateSpaceSet) = typeof(d)(copy(vec(d)))
 Base.sort(d::AbstractStateSpaceSet) = sort!(copy(d))
 @inline Base.eltype(::Type{<:AbstractStateSpaceSet{D, T}}) where {D, T} = SVector{D, T}
 @inline Base.IteratorSize(::Type{<:AbstractStateSpaceSet}) = Base.HasLength()
-Base.eachcol(ds::AbstractStateSpaceSet) = (ds[:, i] for i in 1:size(ds, 2))
+Base.eachcol(ds::AbstractStateSpaceSet{D}) where {D} = (ds[:, i] for i in StaticArraysCore.SOneTo(D))
+
+"""
+    columns(ssset) -> x, y, z, ...
+Return the individual columns of the state space set allocated as `Vector`s.
+
+Equivalent with `collect(eachcol(ssset))`.
+"""
+function columns end
+@generated function columns(data::AbstractStateSpaceSet{D, T}) where {D, T}
+    gens = [:(data[:, $k]) for k=1:D]
+    quote tuple($(gens...)) end
+end
+columns(x::AbstractVector{<:Real}) = x
 
 ###########################################################################################
 # Indexing
 ###########################################################################################
 # 1D indexing over the container elements:
-@inline Base.getindex(d::AbstractStateSpaceSet, i::Int) = d.data[i]
-@inline Base.getindex(d::AbstractStateSpaceSet, i) = StateSpaceSet(d.data[i])
+@inline Base.getindex(d::AbstractStateSpaceSet, i::Int) = vec(d)[i]
+@inline Base.getindex(d::AbstractStateSpaceSet, i) = StateSpaceSet(vec(d)[i])
 @inline Base.lastindex(d::AbstractStateSpaceSet) = length(d)
-@inline Base.lastindex(d::AbstractStateSpaceSet, k) = size(d)[k]
 
 # 2D indexing with second index being column (reduces indexing to 1D indexing)
 @inline Base.getindex(d::AbstractStateSpaceSet, i, ::Colon) = d[i]
 
 # 2D indexing where dataset behaves as a matrix
 # with each column a dynamic variable timeseries
-@inline Base.getindex(d::AbstractStateSpaceSet, i::Int, j::Int) = d.data[i][j]
+@inline Base.getindex(d::AbstractStateSpaceSet, i::Int, j::Int) = vec(d)[i][j]
 @inline Base.getindex(d::AbstractStateSpaceSet, ::Colon, j::Int) =
-[d.data[k][j] for k in eachindex(d)]
+[vec(d)[k][j] for k in eachindex(d)]
 @inline Base.getindex(d::AbstractStateSpaceSet, i::AbstractVector, j::Int) =
-[d.data[k][j] for k in i]
+[vec(d)[k][j] for k in i]
 @inline Base.getindex(d::AbstractStateSpaceSet, i::Int, j::AbstractVector) = d[i][j]
 @inline Base.getindex(d::AbstractStateSpaceSet, ::Colon, ::Colon) = d
 @inline Base.getindex(d::AbstractStateSpaceSet, ::Colon, v::AbstractVector) =
@@ -72,7 +75,7 @@ StateSpaceSet([d[i][v] for i in eachindex(d)])
 StateSpaceSet([d[i][v] for i in v1])
 
 # Set index stuff
-@inline Base.setindex!(d::AbstractStateSpaceSet, v, i::Int) = (d.data[i] = v)
+@inline Base.setindex!(d::AbstractStateSpaceSet, v, i::Int) = (vec(d)[i] = v)
 
 function Base.dotview(d::AbstractStateSpaceSet, ::Colon, ::Int)
     error("`setindex!` is not defined for Datasets and the given arguments. "*
@@ -83,7 +86,7 @@ end
 # Appending
 ###########################################################################
 Base.append!(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = (append!(vec(d1), vec(d2)); d1)
-Base.push!(d::AbstractStateSpaceSet, new_item) = (push!(d.data, new_item); d)
+Base.push!(d::AbstractStateSpaceSet, new_item) = (push!(vec(d), new_item); d)
 
 function Base.hcat(d::AbstractStateSpaceSet{D, T}, x::Vector{<:Real}) where {D, T}
     L = length(d)
