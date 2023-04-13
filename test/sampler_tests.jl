@@ -19,6 +19,7 @@ function test_statespace_sampler_rectangular_box()
     # Test generated points are inside the box region
     for i in 1:250
         x = gen()
+        @test all(min_bounds .<= x .<= max_bounds)
         @test isinside(x)
     end
 end
@@ -38,6 +39,7 @@ function test_statespace_sampler_multivariate_gaussian_box()
     # Test generated points are inside the box region
     for i in 1:250
         x = gen()
+        @test all(min_bounds .<= x .<= max_bounds)
         @test isinside(x)
     end
 end
@@ -57,6 +59,7 @@ function test_statespace_sampler_sphere_3D()
     # Test generated points are inside the sphere region
     for i in 1:250
         x = gen()
+        @test norm(x - center) <= radius
         @test isinside(x)
     end
 end
@@ -76,6 +79,7 @@ function test_statespace_sampler_sphere_4D()
     # Test generated points are inside the sphere region
     for i in 1:250
         x = gen()
+        @test norm(x - center) <= radius
         @test isinside(x)
     end
 end
@@ -86,5 +90,4 @@ end
     test_statespace_sampler_multivariate_gaussian_box()
     test_statespace_sampler_sphere_3D()
     test_statespace_sampler_sphere_4D()
-
 end
