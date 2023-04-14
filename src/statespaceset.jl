@@ -34,12 +34,12 @@ Base.copy(d::AbstractStateSpaceSet) = typeof(d)(copy(vec(d)))
 Base.sort(d::AbstractStateSpaceSet) = sort!(copy(d))
 @inline Base.eltype(::Type{<:AbstractStateSpaceSet{D, T}}) where {D, T} = SVector{D, T}
 @inline Base.IteratorSize(::Type{<:AbstractStateSpaceSet}) = Base.HasLength()
-Base.eachcol(ds::AbstractStateSpaceSet{D}) where {D} = (ds[:, i] for i in StaticArraysCore.SOneTo(D))
+Base.eachcol(ds::AbstractStateSpaceSet) = (ds[:, i] for i in 1:dimension(ds))
 
 """
     columns(ssset) -> x, y, z, ...
-Return the individual columns of the state space set allocated as `Vector`s.
 
+Return the individual columns of the state space set allocated as `Vector`s.
 Equivalent with `collect(eachcol(ssset))`.
 """
 function columns end
