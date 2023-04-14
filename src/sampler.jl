@@ -55,7 +55,7 @@ end
 
 function boxregion_multgauss(as, bs, rng)
     @assert length(as) == length(bs) > 0
-    center = mean(hcat(as,bs), dims=2)
+    center = mean(hcat(as,bs))
     gen() = [rand(rng, truncated(Normal(center[i]), as[i], bs[i])) for i=1:length(as)]
     isinside(x) = all(as .< x .< bs)
     return gen, isinside
