@@ -23,10 +23,10 @@ set_distance(d1, d2) = set_distance(d1, d2, Centroid())
 
 A distance that can be used in [`set_distance`](@ref).
 The `Centroid` method returns the distance (according to `metric`) between the
-[centroids](https://en.wikipedia.org/wiki/Centroid) (a.k.a. center of mass) of the sets.
+[centroids](https://en.wikipedia.org/wiki/Centroid) (a.k.a. centers of mass) of the sets.
 
-Besides giving as `metric` an instance from Distances.jl, you can give any function that
-takes in two static vectors are returns a positive definite number to use as a distance.
+`metric` can be any function that takes in two static vectors are returns a positive
+definite number to use as a distance (and typically is a `Metric` from Distances.jl).
 """
 struct Centroid{M}
     metric::M
@@ -133,14 +133,14 @@ end
     setsofsets_distances(a₊, a₋ [, distance]) → distances
 
 Calculate distances between sets of `StateSpaceSet`s. Here  `a₊, a₋` are containers of
-`StateSpaceSet`s, and the returned distances are dictionaries of
-of distances. Specifically, `distances[i][j]` is the distance of the set in
+`StateSpaceSet`s, and the returned distances are dictionaries of distances.
+Specifically, `distances[i][j]` is the distance of the set in
 the `i` key of `a₊` to the `j` key of `a₋`. Notice that distances from `a₋` to
 `a₊` are not computed at all (assumming symmetry in the distance function).
 
-The `distance` can be as in [`set_distance`](@ref).
-However, `distance` can also be any arbitrary user function that takes as input
-two state space sets and returns any positive-definite number as their "distance".
+The `distance` can be as in [`set_distance`](@ref), or it can be an arbitrary function
+that takes as input two state space sets and returns any positive-definite number
+as their "distance".
 """
 function setsofsets_distances(a₊, a₋, method = Centroid())
     (isempty(a₊) || isempty(a₋)) && error("The set containers must be non-empty.")
