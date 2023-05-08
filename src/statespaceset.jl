@@ -47,7 +47,7 @@ function columns end
     gens = [:(data[:, $k]) for k=1:D]
     quote tuple($(gens...)) end
 end
-columns(x::AbstractVector{<:Real}) = x
+columns(x::AbstractVector{<:Real}) = (x,)
 
 ###########################################################################################
 # Indexing
