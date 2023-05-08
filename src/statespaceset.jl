@@ -252,7 +252,7 @@ using Statistics: mean, std
 Create a standardized version of the input set where each column
 is transformed to have mean 0 and standard deviation 1.
 """
-standardize(d::AbstractStateSpaceSet) = StateSpaceSet(standardized_timeseries(d)[1]...; warn = false)
+standardize(d::AbstractStateSpaceSet) = StateSpaceSet(standardized_timeseries(d)[1]...)
 function standardized_timeseries(d::AbstractStateSpaceSet)
     xs = columns(d)
     means = mean.(xs)
