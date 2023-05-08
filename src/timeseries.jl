@@ -15,7 +15,8 @@ end
 
 using Statistics: mean, std
 """
-    standardize(x::Timeseries) = (x - mean(x))/std(x)
+    standardize(x::AbstractVector{<:Real}) = (x - mean(x))/std(x)
 """
 standardize(x::Timeseries) = standardize!(copy(x))
 standardize!(x::Timeseries) = (x .= (x .- mean(x))./std(x))
+columns(x::AbstractVector{<:Real}) = (x,)
