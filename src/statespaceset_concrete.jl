@@ -56,8 +56,7 @@ StateSpaceSet(s::AbstractVector{T}) where {T} = StateSpaceSet(SVector.(s))
 
 function StateSpaceSet(v::Vector{<:AbstractArray{T}}) where {T<:Number}
     D = length(v[1])
-    @assert length(unique!(length.(v))) == 1 "All input vectors must have same length"
-    D > 100 && @warn "You are attempting to make a StateSpaceSet of dimensions > 100"
+    length(unique!(length.(v))) == 1 || error("All input vectors must have same length")
     L = length(v)
     data = Vector{SVector{D, T}}(undef, L)
     for i in 1:length(v)
@@ -71,7 +70,6 @@ end
 
 @generated function _dataset(vecs::Vararg{<:AbstractVector{T},D}) where {D, T}
     gens = [:(vecs[$k][i]) for k=1:D]
-    D > 100 && @warn "You are attempting to make a StateSpaceSet of dimensions > 100"
     quote
         L = typemax(Int)
         for x in vecs
