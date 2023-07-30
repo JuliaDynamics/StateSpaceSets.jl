@@ -1,8 +1,5 @@
 export statespace_sampler
 using Distributions, LinearAlgebra, Random
-# TODO: The performance of this whole thing can be improved massively
-# by creating structrs with pre-allocated vectors and using
-# `rand!` or `randn!` in these vectors.
 # TODO: I think these functions aren't tested...?
 
 """
@@ -42,8 +39,9 @@ end
 
 """
     statespace_sampler(grid::NTuple{N, AbstractRange} [, rng])
-If given a `grid` that is a tuple of ranges, the minimum and maximum of the ranges
-are used as the `min_bounds` and `max_bounds` keywords.
+
+If given a `grid` that is a tuple of `AbstractVector`s, the minimum and maximum of the
+vectors are used as the `min_bounds` and `max_bounds` keywords.
 """
 function statespace_sampler(
         grid::NTuple{N, AbstractRange}, rng::AbstractRNG = Random.GLOBAL_RNG
@@ -93,8 +91,8 @@ function sphereregion(r, dim, center, rng)
     dummy = zeros(dim)
     function generator()
         randn!(rng, dummy)
-        dummy .*= r
         dummy ./= LinearAlgebra.norm(dummy)
+        dummy .*= r
         dummy .+= center
         return dummy
     end
