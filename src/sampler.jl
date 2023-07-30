@@ -1,9 +1,7 @@
 export statespace_sampler
 using Distributions, LinearAlgebra, Random
-# TODO: The performance of this whole thing can be improved massively
-# by creating structrs with pre-allocated vectors and using
-# `rand!` or `randn!` in these vectors.
-# TODO: I think these functions aren't tested...?
+# TODO: Performance can be improved signficantly here by employing dedicated structs
+# that have inner vectors that are updated in-place.
 
 """
     statespace_sampler(rng = Random.GLOBAL_RNG; kwargs...) → sampler, isinside
@@ -13,7 +11,7 @@ that generates random points inside a state space region defined by the keywords
 state space point is inside that region.
 
 The regions can be:
-* **Rectangular box**, with edges `min_bounds` and `max_bounds`.
+* **Rectangular box**, with edges `min_bounds` (inclusive) and `max_bounds` (exclusive).
   The sampling of the points inside the box is decided by the keyword `method` which can
   be either `"uniform"` or `"multgauss"`.
 * **Sphere**, of `spheredims` dimensions, radius `radius` and centered on `center`.
@@ -42,8 +40,9 @@ end
 
 """
     statespace_sampler(grid::NTuple{N, AbstractRange} [, rng])
-If given a `grid` that is a tuple of ranges, the minimum and maximum of the ranges
-are used as the `min_bounds` and `max_bounds` keywords.
+
+If given a `grid` that is a tuple of `AbstractVector`s, the minimum and maximum of the
+vectors are used as the `min_bounds` and `max_bounds` keywords.
 """
 function statespace_sampler(
         grid::NTuple{N, AbstractRange}, rng::AbstractRNG = Random.GLOBAL_RNG
@@ -73,7 +72,7 @@ and `isinside` that returns `true` if a given state is in the box.
 function boxregion(as, bs, rng = Random.GLOBAL_RNG)
     @assert length(as) == length(bs) > 0
     gen() = [rand(rng)*(bs[i]-as[i]) + as[i] for i in 1:length(as)]
-    isinside(x) = all(as .< x .< bs)
+    isinside(x) = all(as .≤ x .< bs)
     return gen, isinside
 end
 
@@ -81,7 +80,7 @@ end
 function boxregion(a::Real, b::Real, rng = Random.GLOBAL_RNG)
     a, b = extrema((a, b))
     gen() = rand(rng)*(b-a) + a
-    isinside = x -> a < x < b
+    isinside = x -> a ≤ x < b
     return gen, isinside
 end
 
@@ -93,11 +92,11 @@ function sphereregion(r, dim, center, rng)
     dummy = zeros(dim)
     function generator()
         randn!(rng, dummy)
-        dummy .*= r
         dummy ./= LinearAlgebra.norm(dummy)
+        dummy .*= rand(rng)*r
         dummy .+= center
         return dummy
     end
-    isinside(x) = norm(x .- center) < r
+    isinside(x) = norm(x .- center) ≤ r
     return generator, isinside
 end
