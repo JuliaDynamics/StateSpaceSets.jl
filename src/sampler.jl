@@ -14,6 +14,7 @@ A function that facilitates sampling points randomly and uniformly in a state sp
 
 - `sampler` is a 0-argument function
   that when called generates a random point inside a state space `region`.
+  The point is always a `Vector` for type stability irrespectively of dimension.
   Generally, the generated point should be _copied_ if it needs to be stored.
   (i.e., calling `sampler()` utilizes a shared vector)
   `sampler` is a thread-safe function.
@@ -25,7 +26,7 @@ The `region` can be an instance of any of the following types
 state space dimension):
 
 - `HSphere(radius::Real, center)`: points _inside_ the hypersphere (boundary excluded).
-  Convenience method `HyperSphere(radius::Real, D::Int)` makes the center a
+  Convenience method `HSphere(radius::Real, D::Int)` makes the center a
   `D`-long vector of zeros.
 - `HSphereSurface(radius, center)`: points on the hypersphere surface. Same convenience
   method as above is possible.
