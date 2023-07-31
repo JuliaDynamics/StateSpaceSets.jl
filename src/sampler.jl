@@ -1,7 +1,7 @@
 export statespace_sampler
 export HSphere, HRectangle, HSphereSurface
 
-using Random: Xoshiro
+using Random
 using LinearAlgebra: norm
 
 abstract type Region end
@@ -55,19 +55,23 @@ end
 HRectangle(mins::Tuple, maxs::Tuple) = HRectangle([mins...], [maxs...])
 
 function statespace_sampler(region::HSphere, seed = abs(rand(Int)))
-    return sphereregion(region.r, region.center, Xoshiro(seed), true)
+    return sphereregion(region.radius, region.center, Xoshiro(seed), true)
 end
 
 function statespace_sampler(region::HSphereSurface, seed = abs(rand(Int)))
-    return sphereregion(region.r, region.center, Xoshiro(seed), false)
+    return sphereregion(region.radius, region.center, Xoshiro(seed), false)
 end
 
 function sphereregion(r, center, rng, inside)
     @assert r ≥ 0
     dim = length(center)
     dummies = [zeros(dim) for _ in 1:Threads.nthreads()]
-    generator = SphereGenerator(r, center, dummies, inside, rng)
-    isinside(x) = norm(x .- center) ≤ r
+    generator = SphereGenerator(r, center, dummies, inside, rng, length(center))
+    if inside
+        isinside = (x) -> norm(x .- center) < r
+    else
+        isinside = (x) -> norm(x .- center) ≈ r
+    end
     return generator, isinside
 end
 struct SphereGenerator{T, R}
@@ -76,14 +80,16 @@ struct SphereGenerator{T, R}
     dummies::Vector{Vector{T}}
     inside::Bool
     rng::R
+    D::Int
 end
 function (s::SphereGenerator)()
-    dummy = dummies[Threads.threadid()]
-    randn!(rng, dummy)
+    dummy = s.dummies[Threads.threadid()]
+    r = s.radius
+    randn!(s.rng, dummy)
     n = LinearAlgebra.norm(dummy)
-    ρ = inside ? (rand(rng)^(1/dim))*r : r
+    ρ = s.inside ? (rand(s.rng)^(1/s.D))*r : r
     dummy .*= ρ/n
-    dummy .+= center
+    dummy .+= s.center
     return dummy
 end
 
@@ -93,7 +99,7 @@ function statespace_sampler(region::HRectangle, seed = abs(rand(Int)))
     @assert length(as) == length(bs) > 0
     dummies = [zeros(length(as)) for _ in 1:Threads.nthreads()]
     gen = RectangleGenerator(as, bs .- as, dummies, Xoshiro(seed))
-    isinside(x) = all(i => as[i] ≤ x[i] < bs[i], eachindex(x))
+    isinside(x) = all(i -> as[i] ≤ x[i] < bs[i], eachindex(x))
     return gen, isinside
 end
 struct RectangleGenerator{T, R}
@@ -104,7 +110,7 @@ struct RectangleGenerator{T, R}
 end
 function (s::RectangleGenerator)()
     dummy = s.dummies[Threads.threadid()]
-    rand!(rng, dummy)
+    rand!(s.rng, dummy)
     dummy .*= s.difs
     dummy .+= s.mins
     return dummy

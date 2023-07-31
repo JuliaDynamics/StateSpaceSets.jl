@@ -4,6 +4,7 @@
 export AbstractDataset, Dataset
 const AbstractDataset = AbstractStateSpaceSet
 const Dataset = StateSpaceSet
+using Random: AbstractRNG
 
 function statespace_sampler(rng::AbstractRNG = Random.GLOBAL_RNG;
         min_bounds=[], max_bounds=[], method="uniform",
