@@ -91,7 +91,7 @@ function statespace_sampler(region::HRectangle, seed = abs(rand(Int)))
     as = region.mins
     bs = region.maxs
     @assert length(as) == length(bs) > 0
-    dummies = [zeros(dim) for _ in 1:Threads.nthreads()]
+    dummies = [zeros(length(as)) for _ in 1:Threads.nthreads()]
     gen = RectangleGenerator(as, bs .- as, dummies, Xoshiro(seed))
     isinside(x) = all(i => as[i] ≤ x[i] < bs[i], eachindex(x))
     return gen, isinside
@@ -108,71 +108,4 @@ function (s::RectangleGenerator)()
     dummy .*= s.difs
     dummy .+= s.mins
     return dummy
-end
-
-# TODO: Performance can be improved signficantly here by employing dedicated structs
-# that have inner vectors that are updated in-place.
-
-"""
-    statespace_sampler(grid::NTuple{N, AbstractRange} [, rng])
-
-If given a `grid` that is a tuple of `AbstractVector`s, the minimum and maximum of the
-vectors are used as the `min_bounds` and `max_bounds` keywords.
-"""
-function statespace_sampler(
-        grid::NTuple{N, AbstractRange}, rng::AbstractRNG = Random.GLOBAL_RNG
-    ) where {N}
-    return statespace_sampler(rng;
-        min_bounds = minimum.(grid), max_bounds = maximum.(grid)
-    )
-end
-
-function boxregion_multgauss(as, bs, rng)
-    @assert length(as) == length(bs) > 0
-    center = mean(hcat(as,bs))
-    gen() = [rand(rng, truncated(Normal(center[i]), as[i], bs[i])) for i=1:length(as)]
-    isinside(x) = all(as .< x .< bs)
-    return gen, isinside
-end
-
-# this has a docstring only because it was part of the expansionentropy api.
-# It won't be exported in future versions
-"""
-    boxregion(as, bs, rng = Random.GLOBAL_RNG) -> sampler, isinside
-
-Define a box in ``\\mathbb{R}^d`` with edges the `as` and `bs` and then
-return two functions: `sampler`, which generates a random initial condition in that box
-and `isinside` that returns `true` if a given state is in the box.
-"""
-function boxregion(as, bs, rng = Random.GLOBAL_RNG)
-    @assert length(as) == length(bs) > 0
-    gen() = [rand(rng)*(bs[i]-as[i]) + as[i] for i in 1:length(as)]
-    isinside(x) = all(as .≤ x .< bs)
-    return gen, isinside
-end
-
-# Specialized 1-d version
-function boxregion(a::Real, b::Real, rng = Random.GLOBAL_RNG)
-    a, b = extrema((a, b))
-    gen() = rand(rng)*(b-a) + a
-    isinside = x -> a ≤ x < b
-    return gen, isinside
-end
-
-# Algorithm from https://mathworld.wolfram.com/HyperspherePointPicking.html
-# Normalized multivariate gaussian is on hypersphere
-import LinearAlgebra
-function sphereregion(r, dim, center, rng)
-    @assert r ≥ 0
-    dummy = zeros(dim)
-    function generator()
-        randn!(rng, dummy)
-        n = LinearAlgebra.norm(dummy)
-        ρ = (rand(rng)^(1/dim))*r
-        dummy .*= ρ/n
-        dummy .+= center
-        return dummy
-    end
-    isinside(x) = norm(x .- center) ≤ r
-    return generator, isinside
 end
