@@ -37,18 +37,37 @@ The random number generator is always `Xoshiro` with the given `seed`.
 """
 function statespace_sampler(::Region) end
 
+
+"""
+    HSphere(r::Real, center::Vector)
+    HSphere(r::Real, D::Int)
+
+A state space region denoting all points _within_ a hypersphere.
+"""
 struct HSphere{T} <: Region
     radius::T
     center::Vector{T}
 end
 HSphere(r::Real, D::Int) = HSphere(r, zeros(eltype(r), D))
 
+"""
+    HSphereSurface(r::Real, center::Vector)
+    HSphereSurface(r::Real, D::Int)
+
+A state space region denoting all points _on the surface_ (boundary)
+of a hypersphere.
+"""
 struct HSphereSurface{T} <: Region
     radius::T
     center::Vector{T}
 end
 HSphereSurface(r::Real, D::Int) = HSphereSurface(r, zeros(eltype(r), D))
 
+"""
+    HRectangle(mins::Vector, maxs::Vector)
+
+A state space region denoting all points _within_ the hyperrectangle.
+"""
 struct HRectangle{T} <: Region
     mins::Vector{T}
     maxs::Vector{T}
@@ -78,7 +97,7 @@ end
 struct SphereGenerator{T, R}
     radius::T
     center::Vector{T}
-    dummies::Vector{Vector{T}}
+    dummies::Vector{Vector{Float64}}
     inside::Bool
     rng::R
     D::Int
@@ -99,14 +118,15 @@ function statespace_sampler(region::HRectangle, seed = abs(rand(Int)))
     bs = region.maxs
     @assert length(as) == length(bs) > 0
     dummies = [zeros(length(as)) for _ in 1:Threads.nthreads()]
-    gen = RectangleGenerator(as, bs .- as, dummies, Xoshiro(seed))
+    T = as[1] isa AbstractFloat ? eltype(as) : Float64
+    gen = RectangleGenerator(T.(as), T.(bs .- as), dummies, Xoshiro(seed))
     isinside(x) = all(i -> as[i] ≤ x[i] < bs[i], eachindex(x))
     return gen, isinside
 end
 struct RectangleGenerator{T, R}
     mins::Vector{T}
     difs::Vector{T}
-    dummies::Vector{Vector{T}}
+    dummies::Vector{Vector{Float64}}
     rng::R
 end
 function (s::RectangleGenerator)()

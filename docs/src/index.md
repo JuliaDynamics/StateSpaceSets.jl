@@ -104,4 +104,7 @@ Typically a good choice for `w` coincides with the choice an optimal delay time,
 ## Samplers
 ```@docs
 statespace_sampler
+HSphere
+HSphereSurface
+HRectangle
 ```
