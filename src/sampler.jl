@@ -4,6 +4,8 @@ export HSphere, HRectangle, HSphereSurface
 using Random: Xoshiro
 using LinearAlgebra: norm
 
+abstract type Region end
+
 """
     statespace_sampler(region [, seed = 42]) → sampler, isinside
 
@@ -15,7 +17,7 @@ It generates two functions:
   Generally, the generated point should be _copied_ if it needs to be stored.
   (i.e., calling `sampler()` utilizes a shared vector)
   `sampler` is a thread-safe function.
-- `isinside` is a 1-argument function that decides returns `true` if the given
+- `isinside` is a 1-argument function that returns `true` if the given
   state space point is inside the `region`.
 
 The `region` can be an instance of any of the following types
@@ -32,21 +34,21 @@ state space dimension):
 
 The random number generator is always `Xoshiro` with the given `seed`.
 """
-function statespace_sampler end
+function statespace_sampler(::Region) end
 
-struct HSphere{T}
+struct HSphere{T} <: Region
     radius::T
     center::Vector{T}
 end
 HSphere(r::Real, D::Int) = HSphere(r, zeros(eltype(r), D))
 
-struct HSphereSurface{T}
+struct HSphereSurface{T} <: Region
     radius::T
     center::Vector{T}
 end
 HSphereSurface(r::Real, D::Int) = HSphereSurface(r, zeros(eltype(r), D))
 
-struct HRectangle{T}
+struct HRectangle{T} <: Region
     mins::Vector{T}
     maxs::Vector{T}
 end
@@ -110,41 +112,6 @@ end
 
 # TODO: Performance can be improved signficantly here by employing dedicated structs
 # that have inner vectors that are updated in-place.
-
-"""
-    statespace_sampler(rng = Random.GLOBAL_RNG; kwargs...) → sampler, isinside
-Convenience function that creates two functions. `sampler` is a 0-argument function
-that generates random points inside a state space region defined by the keywords.
-`isinside` is a 1-argument function that decides returns `true` if the given
-state space point is inside that region.
-
-The regions can be:
-* **Rectangular box**, with edges `min_bounds` (inclusive) and `max_bounds` (exclusive).
-  The sampling of the points inside the box is decided by the keyword `method` which can
-  be either `"uniform"` or `"multgauss"`.
-* **Sphere**, of `spheredims` dimensions, radius `radius` and centered on `center`.
-"""
-function statespace_sampler(rng::AbstractRNG = Random.GLOBAL_RNG;
-        min_bounds=[], max_bounds=[], method="uniform",
-        radius::Number=-1,
-        spheredims::Int=0, center=zeros(spheredims),
-    )
-
-    if min_bounds ≠ [] && max_bounds != []
-        if method == "uniform"
-            gen, isinside = boxregion(min_bounds, max_bounds, rng)
-        elseif method == "multgauss"
-            gen, isinside = boxregion_multgauss(min_bounds, max_bounds, rng)
-        else
-            @error("Unsupported boxregion sampling method")
-        end
-    elseif radius ≥ 0 && spheredims ≥ 1
-        gen, isinside = sphereregion(radius, spheredims, center, rng)
-    else
-        @error("Incorrect keyword specification.")
-    end
-    return gen, isinside
-end
 
 """
     statespace_sampler(grid::NTuple{N, AbstractRange} [, rng])
