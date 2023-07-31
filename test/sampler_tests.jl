@@ -2,15 +2,17 @@ using StateSpaceSets
 using LinearAlgebra, Random, Statistics, Test
 
 @testset "rectangular box" begin
-    @testset "$(method)" for method in ("uniform", "multgauss")
-        rng = MersenneTwister(1234)  # Seed random number generator for reproducibility
+    @testset "D=$(D)" for D in (2, 31)
+        seed = 1234  # Seed random number generator for reproducibility
 
         # Define rectangular box region
-        min_bounds = [-1, -2]
-        max_bounds = [1, 2]
+        min_bounds = rand(D) .- 5
+        max_bounds = rand(D) .+ 5
 
         # Generate sampler and isinside functions
-        gen, isinside = statespace_sampler(rng; min_bounds=min_bounds, max_bounds=max_bounds, method=method)
+        region = HRectangle(min_bounds, max_bounds)
+
+        gen, isinside = statespace_sampler(region, seed)
 
         # Test generated points are inside the box region
         for i in 1:250
@@ -22,23 +24,29 @@ using LinearAlgebra, Random, Statistics, Test
 end
 
 @testset "sphere" begin
-    for radius in (0.1, 4.0)
-        for spheredims in (2, 4)
+    @testset "r = $(r)" for r in (0.1, 4.0)
+        @testset "D=$(D)" for D in (2, 31)
+            @testset "inside=$(inside)" for inside in (true, false)
+                seed = 1234
+                center = fill(rand(), D)
 
-            rng = MersenneTwister(1234)  # Seed random number generator for reproducibility
+                R = inside ? HSphere : HSphereSurface
+                region = R(r, center)
 
-            center = fill(rand(), spheredims)
+                # Generate sampler and isinside functions
+                gen, isinside = statespace_sampler(region, seed)
 
-            # Generate sampler and isinside functions
-            gen, isinside = statespace_sampler(rng; radius=radius, spheredims=spheredims, center=center)
-
-            # Test generated points are inside the sphere region
-            for i in 1:50
-                x = gen()
-                @test norm(x - center) ≤ radius
-                @test isinside(x)
+                # Test generated points are inside the sphere region
+                for i in 1:50
+                    x = gen()
+                    if inside
+                        @test norm(x - center) < r
+                    else
+                        @test norm(x - center) ≈ r
+                    end
+                    @test isinside(x)
+                end
             end
-
         end
     end
 end
