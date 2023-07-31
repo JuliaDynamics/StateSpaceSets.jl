@@ -9,8 +9,8 @@ abstract type Region end
 """
     statespace_sampler(region [, seed = 42]) → sampler, isinside
 
-A function that facilitates randomly sampling points in a state space `region`.
-It generates two functions:
+A function that facilitates sampling points randomly and uniformly in a state space
+`region`. It generates two functions:
 
 - `sampler` is a 0-argument function
   that when called generates a random point inside a state space `region`.
@@ -24,12 +24,12 @@ The `region` can be an instance of any of the following types
 (input arguments if not specified are vectors of length `D`, with `D` the
 state space dimension):
 
-- `HyperSphere(radius::Real, center)`: Points _inside_ the hypersphere (boundary excluded).
+- `HSphere(radius::Real, center)`: points _inside_ the hypersphere (boundary excluded).
   Convenience method `HyperSphere(radius::Real, D::Int)` makes the center a
   `D`-long vector of zeros.
-- `HyperSphereSurface(radius, center)`: Points on the boundary. Same convenience method as
-  above is possible.
-- `HyperRectangle(mins, maxs)`: points uniformly distributed in [min, max) for
+- `HSphereSurface(radius, center)`: points on the hypersphere surface. Same convenience
+  method as above is possible.
+- `HRectangle(mins, maxs)`: points in [min, max) for
   the bounds along each dimension.
 
 The random number generator is always `Xoshiro` with the given `seed`.
@@ -108,4 +108,17 @@ function (s::RectangleGenerator)()
     dummy .*= s.difs
     dummy .+= s.mins
     return dummy
+end
+
+"""
+    statespace_sampler(grid::NTuple{N, AbstractRange} [, seed])
+
+If given a `grid` that is a tuple of `AbstractVector`s, the minimum and maximum of the
+vectors are used to make an `HRectangle` region.
+"""
+function statespace_sampler(
+        grid::NTuple{N, AbstractRange}, seed = abs(rand(Int)),
+    ) where {N}
+    region = HRectangle(minimum.(grid), maximum.(grid))
+    return statespace_sampler(region, seed)
 end
