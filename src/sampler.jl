@@ -37,7 +37,6 @@ The random number generator is always `Xoshiro` with the given `seed`.
 """
 function statespace_sampler(::Region) end
 
-
 """
     HSphere(r::Real, center::Vector)
     HSphere(r::Real, D::Int)
@@ -94,7 +93,7 @@ function sphereregion(r, center, rng, inside)
     end
     return generator, isinside
 end
-struct SphereGenerator{T, R}
+struct SphereGenerator{T, R} <: Function
     radius::T
     center::Vector{T}
     dummies::Vector{Vector{Float64}}
@@ -117,16 +116,16 @@ function statespace_sampler(region::HRectangle, seed = abs(rand(Int)))
     as = region.mins
     bs = region.maxs
     @assert length(as) == length(bs) > 0
-    dummies = [zeros(length(as)) for _ in 1:Threads.nthreads()]
     T = as[1] isa AbstractFloat ? eltype(as) : Float64
+    dummies = [zeros(T, length(as)) for _ in 1:Threads.nthreads()]
     gen = RectangleGenerator(T.(as), T.(bs .- as), dummies, Xoshiro(seed))
     isinside(x) = all(i -> as[i] ≤ x[i] < bs[i], eachindex(x))
     return gen, isinside
 end
-struct RectangleGenerator{T, R}
+struct RectangleGenerator{T, R} <: Function
     mins::Vector{T}
     difs::Vector{T}
-    dummies::Vector{Vector{Float64}}
+    dummies::Vector{Vector{T}}
     rng::R
 end
 function (s::RectangleGenerator)()
