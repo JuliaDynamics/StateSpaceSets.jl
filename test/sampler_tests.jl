@@ -21,7 +21,9 @@ using LinearAlgebra, Random, Statistics, Test
             @test isinside(x)
         end
     end
-    @test HRectangle(SVector(0,0), SVector(1,1)) isa HRectangle
+    rect = HRectangle(SVector(0,0), SVector(1,1))
+    gen, isinside = statespace_sampler(rect, 1)
+    @test gen() isa Vector
 end
 
 @testset "sphere" begin
@@ -50,4 +52,7 @@ end
             end
         end
     end
+    rect = HSphere(0.1, SVector(0.1, 0.1))
+    gen, isinside = statespace_sampler(rect, 1)
+    @test gen() isa Vector
 end
