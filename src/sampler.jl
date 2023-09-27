@@ -38,40 +38,40 @@ The random number generator is always `Xoshiro` with the given `seed`.
 function statespace_sampler(::Region) end
 
 """
-    HSphere(r::Real, center::Vector)
+    HSphere(r::Real, center::AbstractVector)
     HSphere(r::Real, D::Int)
 
 A state space region denoting all points _within_ a hypersphere.
 """
-struct HSphere{T} <: Region
+struct HSphere{T, V<:AbstractVector{T}} <: Region
     radius::T
-    center::Vector{T}
+    center::V
 end
 HSphere(r::Real, D::Int) = HSphere(r, zeros(eltype(r), D))
 
 """
-    HSphereSurface(r::Real, center::Vector)
+    HSphereSurface(r::Real, center::AbstractVector)
     HSphereSurface(r::Real, D::Int)
 
 A state space region denoting all points _on the surface_ (boundary)
 of a hypersphere.
 """
-struct HSphereSurface{T} <: Region
+struct HSphereSurface{T, V<:AbstractVector{T}} <: Region
     radius::T
-    center::Vector{T}
+    center::V
 end
 HSphereSurface(r::Real, D::Int) = HSphereSurface(r, zeros(eltype(r), D))
 
 """
-    HRectangle(mins::Vector, maxs::Vector)
+    HRectangle(mins::AbstractVector, maxs::AbstractVector)
 
 A state space region denoting all points _within_ the hyperrectangle.
 """
-struct HRectangle{T} <: Region
-    mins::Vector{T}
-    maxs::Vector{T}
+struct HRectangle{T, V<:AbstractVector{T}}
+    mins::V
+    maxs::V
 end
-HRectangle(mins::Tuple, maxs::Tuple) = HRectangle([mins...], [maxs...])
+HRectangle(mins::Tuple, maxs::Tuple) = HRectangle(SVector(mins), SVector(maxs))
 
 function statespace_sampler(region::HSphere, seed = abs(rand(Int)))
     return sphereregion(region.radius, region.center, Xoshiro(seed), true)
