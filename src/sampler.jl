@@ -43,9 +43,9 @@ function statespace_sampler(::Region) end
 
 A state space region denoting all points _within_ a hypersphere.
 """
-struct HSphere{T} <: Region
+struct HSphere{T, V<:AbstractVector{T}} <: Region
     radius::T
-    center::Vector{T}
+    center::V
 end
 HSphere(r::Real, D::Int) = HSphere(r, zeros(eltype(r), D))
 
@@ -56,9 +56,9 @@ HSphere(r::Real, D::Int) = HSphere(r, zeros(eltype(r), D))
 A state space region denoting all points _on the surface_ (boundary)
 of a hypersphere.
 """
-struct HSphereSurface{T} <: Region
+struct HSphereSurface{T, V<:AbstractVector{T}} <: Region
     radius::T
-    center::Vector{T}
+    center::V
 end
 HSphereSurface(r::Real, D::Int) = HSphereSurface(r, zeros(eltype(r), D))
 
@@ -67,11 +67,11 @@ HSphereSurface(r::Real, D::Int) = HSphereSurface(r, zeros(eltype(r), D))
 
 A state space region denoting all points _within_ the hyperrectangle.
 """
-struct HRectangle{T} <: Region
-    mins::Vector{T}
-    maxs::Vector{T}
+struct HRectangle{T, V<:AbstractVector{T}}
+    mins::V
+    maxs::V
 end
-HRectangle(mins::Tuple, maxs::Tuple) = HRectangle([mins...], [maxs...])
+HRectangle(mins::Tuple, maxs::Tuple) = HRectangle(SVector(mins), SVector(maxs))
 
 function statespace_sampler(region::HSphere, seed = abs(rand(Int)))
     return sphereregion(region.radius, region.center, Xoshiro(seed), true)

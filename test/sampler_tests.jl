@@ -21,6 +21,7 @@ using LinearAlgebra, Random, Statistics, Test
             @test isinside(x)
         end
     end
+    @test HRectangle(SVector(0,0), SVector(1,1)) isa HRectangle
 end
 
 @testset "sphere" begin
