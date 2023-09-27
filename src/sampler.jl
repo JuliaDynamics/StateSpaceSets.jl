@@ -84,7 +84,7 @@ end
 function sphereregion(r, center, rng, inside)
     @assert r ≥ 0
     dim = length(center)
-    dummies = [zeros(dim) for _ in 1:Threads.nthreads()]
+    dummies = [zeros(typeof(r), dim) for _ in 1:Threads.nthreads()]
     generator = SphereGenerator(r, center, dummies, inside, rng, length(center))
     if inside
         isinside = (x) -> norm(x .- center) < r
@@ -93,10 +93,10 @@ function sphereregion(r, center, rng, inside)
     end
     return generator, isinside
 end
-struct SphereGenerator{T, R} <: Function
+struct SphereGenerator{T, V<:AbstractVector{T}, R} <: Function
     radius::T
-    center::Vector{T}
-    dummies::Vector{Vector{Float64}}
+    center::V
+    dummies::Vector{Vector{T}}
     inside::Bool
     rng::R
     D::Int
@@ -122,9 +122,9 @@ function statespace_sampler(region::HRectangle, seed = abs(rand(Int)))
     isinside(x) = all(i -> as[i] ≤ x[i] < bs[i], eachindex(x))
     return gen, isinside
 end
-struct RectangleGenerator{T, R} <: Function
-    mins::Vector{T}
-    difs::Vector{T}
+struct RectangleGenerator{T, V <: AbstractVector{T}, R} <: Function
+    mins::V
+    difs::V
     dummies::Vector{Vector{T}}
     rng::R
 end
