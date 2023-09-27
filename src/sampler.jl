@@ -38,7 +38,7 @@ The random number generator is always `Xoshiro` with the given `seed`.
 function statespace_sampler(::Region) end
 
 """
-    HSphere(r::Real, center::Vector)
+    HSphere(r::Real, center::AbstractVector)
     HSphere(r::Real, D::Int)
 
 A state space region denoting all points _within_ a hypersphere.
@@ -50,7 +50,7 @@ end
 HSphere(r::Real, D::Int) = HSphere(r, zeros(eltype(r), D))
 
 """
-    HSphereSurface(r::Real, center::Vector)
+    HSphereSurface(r::Real, center::AbstractVector)
     HSphereSurface(r::Real, D::Int)
 
 A state space region denoting all points _on the surface_ (boundary)
@@ -63,7 +63,7 @@ end
 HSphereSurface(r::Real, D::Int) = HSphereSurface(r, zeros(eltype(r), D))
 
 """
-    HRectangle(mins::Vector, maxs::Vector)
+    HRectangle(mins::AbstractVector, maxs::AbstractVector)
 
 A state space region denoting all points _within_ the hyperrectangle.
 """
