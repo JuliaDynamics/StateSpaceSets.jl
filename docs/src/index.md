@@ -21,7 +21,6 @@ It is recommended to always [`standardize`](@ref) datasets.
 
 ```@docs
 StateSpaceSet
-standardize
 ```
 
 In essence a `StateSpaceSet` is simply a wrapper for a `Vector` of `SVector`s.
@@ -46,6 +45,16 @@ minima
 maxima
 minmaxima
 columns
+```
+
+
+## Basic statistics
+
+```@docs
+standardize
+cor
+cov
+mean_and_cov
 ```
 
 ## StateSpaceSet distances

@@ -159,3 +159,9 @@ end
     @test minima(x) == mi
     @test maxima(x) == ma
 end
+
+@testset "cov/cor" begin
+  x = StateSpaceSet(rand(1000, 2))
+  @test Statistics.cov(Matrix(x)) ≈ StateSpaceSets.cov(x)
+  @test Statistics.cor(Matrix(x)) ≈ StateSpaceSets.cor(x)
+end

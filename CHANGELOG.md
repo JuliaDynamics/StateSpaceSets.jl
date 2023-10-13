@@ -1,5 +1,10 @@
 Changelog for StateSpaceSets.jl is kept w.r.t. version 1.3
 
+# 1.5
+
+- `cov` and `cor` functions for computing the covariance/correlation matrix between 
+    columns of a `StateSpaceSet`.
+
 # 1.4
 
 `statespace_sampler` has been overhauled for major benefits:
