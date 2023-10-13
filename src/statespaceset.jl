@@ -1,9 +1,11 @@
 using StaticArraysCore, LinearAlgebra
 using Base.Iterators: flatten
+using Statistics
 
 export AbstractStateSpaceSet, minima, maxima
 export SVector, SMatrix
 export minmaxima, columns, standardize, dimension
+export cov, cor, mean_and_cov
 
 abstract type AbstractStateSpaceSet{D, T} end
 
@@ -261,4 +263,77 @@ function standardized_timeseries(d::AbstractStateSpaceSet)
         xs[i] .= (xs[i] .- means[i]) ./ stds[i]
     end
     return xs, means, stds
+end
+
+
+#####################################################################################
+#                          covariance/correlation matrix                            #
+#####################################################################################
+import Statistics: cov, cor
+using Statistics: mean, std
+using StaticArraysCore: MMatrix, MVector, SMatrix, SVector
+
+"""
+    cov(d::StateSpaceSet) → m::SMatrix
+
+Compute the covariance matrix `m` from the columns of `d`, where `m[i, j]` is the covariance
+between `d[:, i]` and `d[:, j]`.
+"""
+cov(x::AbstractStateSpaceSet) = fastcov(x.data)
+
+"""
+    mean_and_cov(d::StateSpaceSet) → μ, m::SMatrix
+
+Returns a tuple of the column means `μ` and covariance matrix `m`. 
+
+Column means are always computed for the covariance matrix, so this is faster 
+than computing both quantities separately.
+"""
+mean_and_cov(x::AbstractStateSpaceSet) = fastmean_and_cov(x.data)
+
+"""
+    cor(d::StateSpaceSet) → m::SMatrix
+
+Compute the corrlation matrix `m` from the columns of `d`, where `m[i, j]` is the 
+correlation between `d[:, i]` and `d[:, j]`.
+"""
+cor(x::AbstractStateSpaceSet) = fastcor(x.data)
+
+function fastcov(x::Vector{SVector{D, T}}) where {D, T}
+    T <: AbstractFloat || error("Need `eltype(x[i]) <: AbstractFloat` ∀ i ∈ 1:length(x). Got `eltype(x[i])=$(eltype(first(x)))`")
+    μ = mean(x)
+    return fastcov(μ, x)
+end
+
+function fastcov(μ, x::Vector{SVector{D, T}}) where {D, T}
+    T <: AbstractFloat || error("Need `eltype(x[i]) <: AbstractFloat` ∀ i ∈ 1:length(x). Got `eltype(x[i])=$(eltype(first(x)))`")
+    N = length(x) - 1
+    C = MMatrix{D, D}(zeros(D, D))
+    x̄ = mean(x)
+    Δx = MVector{D}(zeros(D))
+    @inbounds for xᵢ in x
+        Δx .= xᵢ - μ
+        C .+= Δx * transpose(Δx)
+    end
+    C ./= N
+    return SMatrix{D, D}(C)
+end
+
+function fastmean_and_cov(x::Vector{SVector{D, T}}) where {D, T}
+    μ = mean(x)
+    Σ = fastcov(μ, x)
+    return μ, Σ
+end
+
+# Non-allocating and faster than writing a wrapper.
+function fastcor(x::Vector{SVector{D, T}}) where {D, T}
+    μ, Σ = fastmean_and_cov(x)
+    σ = std(x)
+    C = MMatrix{D, D}(zeros(D, D))
+    for j in 1:D
+        for i in 1:D
+            C[i, j] = Σ[i, j] / (σ[i] * σ[j])
+        end
+    end
+    return SMatrix{D, D}(C)
 end
