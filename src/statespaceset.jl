@@ -284,7 +284,7 @@ cov(x::AbstractStateSpaceSet) = fastcov(x.data)
 """
     mean_and_cov(d::StateSpaceSet) → μ, m::SMatrix
 
-Returns a tuple of the column means `μ` and covariance matrix `m`. 
+Return a tuple of the column means `μ` and covariance matrix `m`. 
 
 Column means are always computed for the covariance matrix, so this is faster 
 than computing both quantities separately.
