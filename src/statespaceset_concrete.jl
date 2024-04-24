@@ -68,7 +68,8 @@ function StateSpaceSet(v::Vector{<:AbstractArray{T}}) where {T<:Number}
     return StateSpaceSet{D, T}(data)
 end
 
-@generated function _dataset(vecs::Vararg{<:AbstractVector{T},D}) where {D, T}
+@generated function _dataset(vecs::AbstractVector{T}...) where {T}
+    D = length(vecs)
     gens = [:(vecs[$k][i]) for k=1:D]
     quote
         L = typemax(Int)
@@ -84,11 +85,11 @@ end
     end
 end
 
-function StateSpaceSet(vecs::Vararg{<:AbstractVector{T}}) where {T}
+function StateSpaceSet(vecs::AbstractVector{T}...) where {T}
     return StateSpaceSet(_dataset(vecs...))
 end
 
-StateSpaceSet(xs::Vararg{Union{AbstractVector, AbstractStateSpaceSet}}) = hcat(xs...)
+StateSpaceSet(xs::Union{AbstractVector, AbstractStateSpaceSet}...) = hcat(xs...)
 StateSpaceSet(x::Vector{<:Real}, y::AbstractStateSpaceSet{D, T}) where {D, T} = hcat(x, y)
 StateSpaceSet(x::AbstractStateSpaceSet{D, T}, y::Vector{<:Real}) where {D, T} = hcat(x, y)
 
