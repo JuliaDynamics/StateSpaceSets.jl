@@ -109,14 +109,14 @@ function Base.hcat(x::Vector{<:Real}, d::AbstractStateSpaceSet{D, T}) where {D, 
     return StateSpaceSet(data)
 end
 
-function Base.hcat(ds::Vararg{AbstractStateSpaceSet{D, T} where {D}, N}) where {T, N}
+function Base.hcat(ds::AbstractStateSpaceSet{<: Any, T}...) where {T}
     Ls = length.(ds)
     maxlen = maximum(Ls)
     all(Ls .== maxlen) || error("Datasets must be of same length")
     newdim = sum(dimension.(ds))
     v = Vector{SVector{newdim, T}}(undef, maxlen)
     for i = 1:maxlen
-        v[i] = SVector{newdim, T}(Iterators.flatten(ds[d][i] for d = 1:N)...,)
+        v[i] = SVector{newdim, T}(Iterators.flatten(d[i] for d in ds)...,)
     end
     return StateSpaceSet(v)
 end
@@ -127,7 +127,7 @@ end
 # converts every input to a dataset first and promotes everything to a common type.
 # It's not optimal, because it allocates unnecessarily, but it works.
 # If this method is made more efficient, the method above can be dropped.
-function hcat(xs::Vararg{Union{AbstractVector{<:Real}, AbstractStateSpaceSet{D, T} where {D, T}}, N}) where {N}
+function hcat(xs::Union{AbstractVector{<:Real}, AbstractStateSpaceSet}...)
     ds = StateSpaceSet.(xs)
     Ls = length.(ds)
     maxlen = maximum(Ls)
@@ -136,7 +136,7 @@ function hcat(xs::Vararg{Union{AbstractVector{<:Real}, AbstractStateSpaceSet{D, 
     T = promote_type(eltype.(ds)...)
     v = Vector{SVector{newdim, T}}(undef, maxlen)
     for i = 1:maxlen
-        v[i] = SVector{newdim, T}(Iterators.flatten(ds[d][i] for d = 1:N)...,)
+        v[i] = SVector{newdim, T}(Iterators.flatten(d[i] for d in xs)...,)
     end
     return StateSpaceSet(v)
 end
