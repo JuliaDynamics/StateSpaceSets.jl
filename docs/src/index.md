@@ -94,19 +94,6 @@ NeighborNumber
 WithinRange
 ```
 
-
-## Theiler window
-The Theiler window is a concept that is useful when finding neighbors in a dataset that is coming from the sampling of a continuous dynamical system.
-As demonstrated in the figure below, it tries to eliminate spurious "correlations" (wrongly counted neighbors) due to a potentially dense sampling of the trajectory.
-
-The figure below demonstrates a typical `WithinRange` search around the black point with index `i`. Black, red and green points are found neighbors, but points within indices `j` that satisfy `|i-j| ≤ w` should *not* be counted as "true" neighbors.
-These neighbors are typically the same around _any_ state space point, and thus wrongly bias calculations by providing a non-zero baseline of neighbors.
-For the sketch below, `w=3` would have been used.
-
-Typically a good choice for `w` coincides with the choice an optimal delay time, see `DelayEmbeddings.estimate_delay`, for any of the timeseries of the dataset.
-
-![](theiler.png)
-
 ## Samplers
 ```@docs
 statespace_sampler
