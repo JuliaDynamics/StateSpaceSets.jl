@@ -32,10 +32,9 @@ for point in data
 end
 ```
 
-Most functions from **DynamicalSystems.jl** that manipulate and use multidimensional data are expecting a `StateSpaceSet`.
-This allows us to define efficient methods that coordinate well with each other, like e.g. [`embed`](@ref).
+Most functions from **DynamicalSystems.jl** that manipulate ors use multidimensional data are expecting a `StateSpaceSet`.
 
-## StateSpaceSet Functions
+## `StateSpaceSet` accesses
 ```@docs
 minima
 maxima
@@ -53,7 +52,7 @@ cov
 mean_and_cov
 ```
 
-## StateSpaceSet distances
+## `StateSpaceSet` distances
 ### Two datasets
 ```@docs
 set_distance
