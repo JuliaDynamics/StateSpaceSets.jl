@@ -7,11 +7,7 @@ StateSpaceSets
 !!! info "Timeseries and datasets"
     The word "timeseries" can be confusing, because it can mean a univariate (also called scalar or one-dimensional) timeseries or a multivariate (also called multi-dimensional) timeseries.
     To resolve this confusion, in **DynamicalSystems.jl** we have the following convention: **"timeseries"** is always univariate! it refers to a one-dimensional vector of numbers, which exists with respect to some other one-dimensional vector of numbers that corresponds to a time vector.
-    On the other hand, we use the word **"dataset"** is used to refer to a *multi-dimensional* timeseries, which is of course simply a group/set of one-dimensional timeseries represented as a [`StateSpaceSet`](@ref).
-    In some documentation strings we use the word "trajectory" instead of "dataset",
-    which means an ordered multivariate timeseries.
-    This is typically the output of the function [`trajectory`](@ref), or the delay embedding of a timeseries via [`embed`](@ref), both of which are also represented as a [`StateSpaceSet`](@ref).
-
+    On the other hand, we use the word **"state space set"** to refer to a *multi-dimensional* timeseries, which is of course simply a group/set of one-dimensional timeseries represented as a [`StateSpaceSet`](@ref).
 
 ## StateSpaceSet
 
@@ -21,7 +17,6 @@ It is recommended to always [`standardize`](@ref) datasets.
 
 ```@docs
 StateSpaceSet
-standardize
 ```
 
 In essence a `StateSpaceSet` is simply a wrapper for a `Vector` of `SVector`s.
@@ -37,10 +32,9 @@ for point in data
 end
 ```
 
-Most functions from **DynamicalSystems.jl** that manipulate and use multidimensional data are expecting a `StateSpaceSet`.
-This allows us to define efficient methods that coordinate well with each other, like e.g. [`embed`](@ref).
+Most functions from **DynamicalSystems.jl** that manipulate ors use multidimensional data are expecting a `StateSpaceSet`.
 
-## StateSpaceSet Functions
+## `StateSpaceSet` accesses
 ```@docs
 minima
 maxima
@@ -48,12 +42,23 @@ minmaxima
 columns
 ```
 
-## StateSpaceSet distances
+
+## Basic statistics
+
+```@docs
+standardize
+cor
+cov
+mean_and_cov
+```
+
+## `StateSpaceSet` distances
 ### Two datasets
 ```@docs
 set_distance
 Hausdorff
 Centroid
+StrictlyMinimumDistance
 ```
 ### Sets of datasets
 ```@docs
@@ -87,19 +92,6 @@ For **DynamicalSystems.jl**, what is relevant are the two types of neighborhoods
 NeighborNumber
 WithinRange
 ```
-
-
-## Theiler window
-The Theiler window is a concept that is useful when finding neighbors in a dataset that is coming from the sampling of a continuous dynamical system.
-As demonstrated in the figure below, it tries to eliminate spurious "correlations" (wrongly counted neighbors) due to a potentially dense sampling of the trajectory (e.g. by giving small sampling time in [`trajectory`](@ref)).
-
-The figure below demonstrates a typical `WithinRange` search around the black point with index `i`. Black, red and green points are found neighbors, but points within indices `j` that satisfy `|i-j| ≤ w` should *not* be counted as "true" neighbors.
-These neighbors are typically the same around _any_ state space point, and thus wrongly bias calculations by providing a non-zero baseline of neighbors.
-For the sketch below, `w=3` would have been used.
-
-Typically a good choice for `w` coincides with the choice an optimal delay time, see [`estimate_delay`](@ref), for any of the timeseries of the dataset.
-
-![](theiler.png)
 
 ## Samplers
 ```@docs
