@@ -7,11 +7,7 @@ StateSpaceSets
 !!! info "Timeseries and datasets"
     The word "timeseries" can be confusing, because it can mean a univariate (also called scalar or one-dimensional) timeseries or a multivariate (also called multi-dimensional) timeseries.
     To resolve this confusion, in **DynamicalSystems.jl** we have the following convention: **"timeseries"** is always univariate! it refers to a one-dimensional vector of numbers, which exists with respect to some other one-dimensional vector of numbers that corresponds to a time vector.
-    On the other hand, we use the word **"dataset"** is used to refer to a *multi-dimensional* timeseries, which is of course simply a group/set of one-dimensional timeseries represented as a [`StateSpaceSet`](@ref).
-    In some documentation strings we use the word "trajectory" instead of "dataset",
-    which means an ordered multivariate timeseries.
-    This is typically the output of the function [`trajectory`](@ref), or the delay embedding of a timeseries via [`embed`](@ref), both of which are also represented as a [`StateSpaceSet`](@ref).
-
+    On the other hand, we use the word **"state space set"** to refer to a *multi-dimensional* timeseries, which is of course simply a group/set of one-dimensional timeseries represented as a [`StateSpaceSet`](@ref).
 
 ## StateSpaceSet
 
@@ -63,6 +59,7 @@ mean_and_cov
 set_distance
 Hausdorff
 Centroid
+StrictlyMinimumDistance
 ```
 ### Sets of datasets
 ```@docs
