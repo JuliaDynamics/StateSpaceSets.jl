@@ -279,7 +279,7 @@ using StaticArraysCore: MMatrix, MVector, SMatrix, SVector
 Compute the covariance matrix `m` from the columns of `d`, where `m[i, j]` is the covariance
 between `d[:, i]` and `d[:, j]`.
 """
-cov(x::AbstractStateSpaceSet) = fastcov(x.data)
+cov(x::AbstractStateSpaceSet) = fastcov(vec(x))
 
 """
     mean_and_cov(d::StateSpaceSet) → μ, m::SMatrix
@@ -289,7 +289,7 @@ Return a tuple of the column means `μ` and covariance matrix `m`.
 Column means are always computed for the covariance matrix, so this is faster 
 than computing both quantities separately.
 """
-mean_and_cov(x::AbstractStateSpaceSet) = fastmean_and_cov(x.data)
+mean_and_cov(x::AbstractStateSpaceSet) = fastmean_and_cov(vec(x))
 
 """
     cor(d::StateSpaceSet) → m::SMatrix
@@ -297,7 +297,7 @@ mean_and_cov(x::AbstractStateSpaceSet) = fastmean_and_cov(x.data)
 Compute the corrlation matrix `m` from the columns of `d`, where `m[i, j]` is the 
 correlation between `d[:, i]` and `d[:, j]`.
 """
-cor(x::AbstractStateSpaceSet) = fastcor(x.data)
+cor(x::AbstractStateSpaceSet) = fastcor(vec(x))
 
 function fastcov(x::Vector{SVector{D, T}}) where {D, T}
     T <: AbstractFloat || error("Need `eltype(x[i]) <: AbstractFloat` ∀ i ∈ 1:length(x). Got `eltype(x[i])=$(eltype(first(x)))`")
