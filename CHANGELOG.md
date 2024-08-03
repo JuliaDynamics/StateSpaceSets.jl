@@ -1,8 +1,17 @@
 Changelog for StateSpaceSets.jl is kept w.r.t. version 1.3
 
+# 2.0
+
+- `StateSpaceSet` now subtypes `AbstractVector`, in particular `StateSpaceSet{V<:AbstractVector} <: AbstractVector{X}`. This lead to the breaking change that `size(ssset) = (length(ssset), )` while before `size` was `length(ssset), dimension(ssset)`. Now you have to use `dimension(ssset)` exclusively to get the "number of columns" in the state space set.
+- The keyword `container` can be given to all functions that make state space sets
+  and sets the type of the container of the inner vectors. This is the abstract type
+  and is typically `SVector` or `Vector`.
+- All deprecations of v1 have been removed. Primarily this includes `Dataset` and an old version of `statespace_sampler`.
+
+
 # 1.5
 
-- `cov` and `cor` functions for computing the covariance/correlation matrix between 
+- `cov` and `cor` functions for computing the covariance/correlation matrix between
     columns of a `StateSpaceSet`.
 
 # 1.4
