@@ -113,7 +113,7 @@ function Base.hcat(xs::Union{AbstractVector{<:Real}, AbstractStateSpaceSet}...)
         end
         v[i] = e
     end
-    return StateSpaceSet(v)
+    return StateSpaceSet(v; container = V2)
 end
 
 function findcontainertype(xs::Union{AbstractVector{<:Real}, AbstractStateSpaceSet}...)
