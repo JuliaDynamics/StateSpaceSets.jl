@@ -13,9 +13,10 @@ abstract type AbstractStateSpaceSet{D, T, V} <: AbstractVector{V} end
 # Core extensions and functions:
 """
     dimension(thing) -> D
+
 Return the dimension of the `thing`, in the sense of state-space dimensionality.
 """
-dimension(::AbstractStateSpaceSet{D}) where {D,T} = D
+dimension(::AbstractStateSpaceSet{D}) where {D} = D
 Base.eltype(::AbstractStateSpaceSet{D,T}) where {D,T} = T
 Base.vec(X::AbstractStateSpaceSet) = X.data
 
@@ -42,7 +43,7 @@ Return the individual columns of the state space set allocated as `Vector`s.
 Equivalent with `collect(eachcol(ssset))`.
 """
 function columns end
-@generated function columns(data::AbstractStateSpaceSet{D, T}) where {D, T}
+@generated function columns(data::AbstractStateSpaceSet{D}) where {D}
     gens = [:(data[:, $k]) for k=1:D]
     quote tuple($(gens...)) end
 end
@@ -86,22 +87,42 @@ end
 Base.append!(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = (append!(vec(d1), vec(d2)); d1)
 Base.push!(d::AbstractStateSpaceSet, new_item) = (push!(vec(d), new_item); d)
 
-function Base.hcat(d::AbstractStateSpaceSet{D, T}, x::Vector{<:Real}) where {D, T}
+function Base.hcat(d::AbstractStateSpaceSet{D, T, V}, x::AbstractVector{<:Real}) where {D, T, V}
     L = length(d)
-    L == length(x) || error("dataset and vector must be of same length")
-    data = Vector{SVector{D+1, T}}(undef, L)
+    L == length(x) || error("statespaceset and vector must be of same length")
+    if V == SVector{D, T}
+        V2 = SVector{D+1, T}
+    else
+        V2 = V # it is `Vector{T}` instead
+    end
+    data = Vector{V2}(undef, L)
     @inbounds for i in 1:L
-        data[i] = SVector{D+1, T}(d[i]..., x[i])
+        if V == SVector{D, T}
+            e = V2(d[i]..., x[i])
+        else
+            e = vcat(d[i], x[i])
+        end
+        data[i] = e
     end
     return StateSpaceSet(data)
 end
 
-function Base.hcat(x::Vector{<:Real}, d::AbstractStateSpaceSet{D, T}) where {D, T}
+function Base.hcat(x::AbstractVector{<:Real}, d::AbstractStateSpaceSet{D, T, V}) where {D, T, V}
     L = length(d)
-    L == length(x) || error("dataset and vector must be of same length")
-    data = Vector{SVector{D+1, T}}(undef, L)
+    L == length(x) || error("statespaceset and vector must be of same length")
+    if V == SVector{D, T}
+        V2 = SVector{D+1, T}
+    else
+        V2 = V # it is `Vector{T}` instead
+    end
+    data = Vector{V2}(undef, L)
     @inbounds for i in 1:L
-        data[i] = SVector{D+1, T}(x[i], d[i]...)
+        if V == SVector{D, T}
+            e = V2(x[i], d[i]...)
+        else
+            e = vcat(x[i], d[i])
+        end
+        data[i] = e
     end
     return StateSpaceSet(data)
 end
@@ -170,10 +191,11 @@ Base.show(io::IO, d::AbstractStateSpaceSet) = print(io, summary(d))
 #####################################################################################
 """
     minima(dataset)
+
 Return an `SVector` that contains the minimum elements of each timeseries of the
 dataset.
 """
-function minima(data::AbstractStateSpaceSet{D, T}) where {D, T<:Real}
+function minima(data::AbstractStateSpaceSet{D, T, V}) where {D, T<:Real, V}
     m = Vector(data[1])
     for point in data
         for i in 1:D
@@ -182,7 +204,7 @@ function minima(data::AbstractStateSpaceSet{D, T}) where {D, T<:Real}
             end
         end
     end
-    return SVector{D,T}(m)
+    return V(m)
 end
 
 """
@@ -190,7 +212,7 @@ end
 Return an `SVector` that contains the maximum elements of each timeseries of the
 dataset.
 """
-function maxima(data::AbstractStateSpaceSet{D, T}) where {D, T<:Real}
+function maxima(data::AbstractStateSpaceSet{D, T, V}) where {D, T<:Real, V}
     m = Vector(data[1])
     for point in data
         for i in 1:D
@@ -199,14 +221,14 @@ function maxima(data::AbstractStateSpaceSet{D, T}) where {D, T<:Real}
             end
         end
     end
-    return SVector{D, T}(m)
+    return V(m)
 end
 
 """
     minmaxima(dataset)
 Return `minima(dataset), maxima(dataset)` without doing the computation twice.
 """
-function minmaxima(data::AbstractStateSpaceSet{D, T}) where {D, T<:Real}
+function minmaxima(data::AbstractStateSpaceSet{D, T, V}) where {D, T<:Real, V}
     mi = Vector(data[1])
     ma = Vector(data[1])
     for point in data
@@ -218,7 +240,7 @@ function minmaxima(data::AbstractStateSpaceSet{D, T}) where {D, T<:Real}
             end
         end
     end
-    return SVector{D, T}(mi), SVector{D, T}(ma)
+    return v(mi), V(ma)
 end
 
 #####################################################################################
@@ -281,9 +303,9 @@ cov(x::AbstractStateSpaceSet) = fastcov(vec(x))
 """
     mean_and_cov(d::StateSpaceSet) → μ, m::SMatrix
 
-Return a tuple of the column means `μ` and covariance matrix `m`. 
+Return a tuple of the column means `μ` and covariance matrix `m`.
 
-Column means are always computed for the covariance matrix, so this is faster 
+Column means are always computed for the covariance matrix, so this is faster
 than computing both quantities separately.
 """
 mean_and_cov(x::AbstractStateSpaceSet) = fastmean_and_cov(vec(x))
@@ -291,7 +313,7 @@ mean_and_cov(x::AbstractStateSpaceSet) = fastmean_and_cov(vec(x))
 """
     cor(d::StateSpaceSet) → m::SMatrix
 
-Compute the corrlation matrix `m` from the columns of `d`, where `m[i, j]` is the 
+Compute the corrlation matrix `m` from the columns of `d`, where `m[i, j]` is the
 correlation between `d[:, i]` and `d[:, j]`.
 """
 cor(x::AbstractStateSpaceSet) = fastcor(vec(x))
