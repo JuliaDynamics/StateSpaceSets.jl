@@ -7,7 +7,6 @@ module StateSpaceSets
     read(path, String)
 end StateSpaceSets
 
-
 include("statespaceset.jl")
 include("statespaceset_stats.jl")
 include("statespaceset_concrete.jl")
@@ -16,6 +15,5 @@ include("neighborhoods.jl")
 include("set_distance.jl")
 include("utils.jl")
 include("sampler.jl")
-include("deprecations.jl")
 
 end # module StateSpaceSets
