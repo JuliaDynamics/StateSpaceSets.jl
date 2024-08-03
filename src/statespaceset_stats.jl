@@ -53,7 +53,7 @@ function minmaxima(data::AbstractStateSpaceSet{D, T, V}) where {D, T<:Real, V}
             end
         end
     end
-    return v(mi), V(ma)
+    return V(mi), V(ma)
 end
 
 #####################################################################################

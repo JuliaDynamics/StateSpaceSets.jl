@@ -49,6 +49,8 @@ The distance is calculated with the metric given to `Hausdorff` which defaults t
 
 `Hausdorff` is 2x slower than [`StrictlyMinimumDistance`](@ref), however it is
 a proper metric in the space of sets of state space sets.
+
+This metric only works for `StateSpaceSet`s whose elements are `SVector`s.
 """
 struct Hausdorff{M<:Metric}
     metric::M
@@ -79,6 +81,8 @@ Brute force performs better for datasets that are either large dimensional or
 have a small amount of points. Deciding a cutting point is not trivial,
 and is recommended to simply benchmark the [`set_distance`](@ref) function to
 make a decision.
+
+If `brute = false` this metric only works for `StateSpaceSet`s whose elements are `SVector`s.
 """
 struct StrictlyMinimumDistance{M<:Metric}
     brute::Bool
