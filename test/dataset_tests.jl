@@ -3,149 +3,118 @@ using Statistics
 
 println("\nTesting StateSpaceSet...")
 
-@testset "StateSpaceSet" begin
-  original = rand(1001,3)
-  data = StateSpaceSet(original)
-  xs = columns(data)
+o = [rand(SVector{3, Float64}) for _ in 1:10]
+s = StateSpaceSet(o)
 
-  @testset "Basics" begin
-    x, y, z = StateSpaceSet(rand(10, 2)), StateSpaceSet(rand(10, 2)), rand(10)
-    @test StateSpaceSet(x) == x # identity
-    @test StateSpaceSet(x, y,) isa StateSpaceSet
-    @test StateSpaceSet(x, y, y) isa StateSpaceSet
-    @test size(StateSpaceSet(x, y)) == (10, 4)
+@testset "construction" begin
+  x = rand(10)
+  y = rand(10)
+  z = rand(10, 4)
+
+  s1 = StateSpaceSet(x)
+  s2 = StateSpaceSet(x, y)
+  s3 = StateSpaceSet(z)
+
+  for (i, q) in enumerate((s1, s2, s, s3))
+    @test dimension(q) == i
+    @test size(q) == (10,)
+    @test length(q) == 10
   end
 
-  @testset "iteration" begin
-    for (i, point) in enumerate(data)
-      @test point == original[i, :]
+end
+
+
+@testset "iteration" begin
+  for (i, point) in enumerate(s)
+    @test point == o[i]
+  end
+  q = map(x -> x[1], s)
+  @test length(q) == length(o)
+  @test q isa Vector{Float64}
+end
+
+
+@testset "append" begin
+  s1 = deepcopy(s)
+  append!(s1, s)
+  @test length(s1) == 20
+  push!(s1, s[end])
+  @test length(s1) == 21
+end
+
+@testset "hcat" begin
+    x1 = 1:5; x2 = 2:6; x3 = 3:7; x4 = 4:8
+    @testset "T=$(T)" for T in (SVector, Vector)
+      D1, D2 = StateSpaceSet(x1, x2; container = T), StateSpaceSet(x3, x4; container = T)
+      @test hcat(D1, x1) == StateSpaceSet(x1, x2, x1)
+      @test hcat(D1, D2) == StateSpaceSet(x1, x2, x3, x4)
+      @test hcat(x1, D1) == StateSpaceSet(x1, x1, x2)
+      @test hcat(x1, D1, x2) == StateSpaceSet(x1, x1, x2, x2)
+      @test StateSpaceSets.containertype(hcat(D1, x1)) <: T
     end
-    q = map(x -> x[1], data)
-    @test length(q) == length(data)
-    @test q isa Vector{Float64}
+end
+
+
+@testset "indexing" begin
+  s = [rand(SVector{3, Float64}) for _ in 1:100]
+  s = StateSpaceSet(s)
+  x = s[:, 1]
+  @test x isa Vector{Float64}
+  @test s[5] isa SVector{3, Float64}
+  @test s[11:20] isa StateSpaceSet
+  @test s[:, 2:3][:, 1] == s[:, 2]
+
+  sub = view(s, 11:20)
+  @test sub isa StateSpaceSets.SubStateSpaceSet
+  @test sub[2] == s[12]
+  @test dimension(sub) == dimension(s)
+  d = sub[:, 1]
+  @test d isa Vector{Float64}
+
+  # setindex
+  s[1] = SVector(0.1,0.1,0.1)
+  @test s[1] == SVector(0.1,0.1,0.1)
+  @test_throws ErrorException (s[:,1] .= 0)
+end
+
+@testset "copy" begin
+  d = StateSpaceSet(rand(10, 2))
+  v = vec(d)
+  d2 = copy(d)
+  d2[1] == d[1]
+  d2[1] = SVector(5.0, 5.0)
+  @test d2[1] != d[1]
+end
+
+@testset "minmax" begin
+  mi = minima(s)
+  ma = maxima(s)
+  mimi, mama = minmaxima(s)
+  @test mimi == mi
+  @test mama == ma
+  xs = columns(s)
+  for i in 1:3
+    @test mi[i] < ma[i]
+    a,b = extrema(xs[i])
+    @test a == mi[i]
+    @test b == ma[i]
   end
+end
 
-  @testset "Concatenation/Append" begin
+@testset "Matrix" begin
+  m = Matrix(s)
+  @test StateSpaceSet(m) == s
+  m = rand(1000, 4)
+  @test Matrix(StateSpaceSet(m)) == m
+end
 
-    @testset "append" begin
-        D1, D2 = StateSpaceSet([1:10 2:11]), StateSpaceSet([3:12 4:13])
-        append!(D1, D2)
-        @test length(D1) == 20
-        d1 = [1:10 |> collect; 3:12 |> collect]
-        d2 = [2:11 |> collect; 4:13 |> collect]
-        @test D1 == StateSpaceSet([d1 d2])
-    end
-
-    types = [Int, Float64]
-    @testset "hcat with identical element type ($(T))" for T in types
-        x1, x2, x3 = T.([1:5 2:6]), T.([3:7 4:8]), T.(5:9)
-        D1, D2, D3 = StateSpaceSet(x1), StateSpaceSet(x2), StateSpaceSet(x3)
-        y = T.(1:5) |> collect
-        @test hcat(D1, y) == StateSpaceSet([1:5 2:6 1:5])
-        @test hcat(D1, D2) == StateSpaceSet([1:5 2:6 3:7 4:8])
-        @test hcat(D1, D2, D3) == StateSpaceSet([1:5 2:6 3:7 4:8 5:9])
-        @test hcat(D1, y) |> size == (5, 3)
-        @test hcat(y, D1) |> size == (5, 3)
-        @test hcat(D1, y) == StateSpaceSet(([1:5 2:6 y]))
-        @test hcat(y, D1) == StateSpaceSet(([y 1:5 2:6]))
-
-        x, y, z, w = rand(100), rand(100), StateSpaceSet(rand(100, 2)), StateSpaceSet(rand(Int, 100, 3))
-        @test StateSpaceSet(x, y, z, w) == StateSpaceSet(StateSpaceSet(x), StateSpaceSet(y), z, w)
-    end
-
-    # TODO: By construction, these errors will occur, because the type constraints are
-    # not imposed on the vector inputs, only the dataset input. In contrast, for
-    # hcat on datasets only, the we force all datasets to have the same element type.
-    #
-    # Should we force the element types of the dataset and vector to be identical and
-    # throw an informative error message if they are not?
-    @testset "hcat with nonidentical element types" begin
-        D = StateSpaceSet([1:5 2:6]) # StateSpaceSet{2, Int}
-        x = rand(length(D))    # Vector{Float64}
-        @test_throws InexactError hcat(D, x)
-        @test_throws InexactError hcat(x, D)
-    end
-  end
-
-  @testset "Methods & Indexing" begin
-    a = data[:, 1]
-    b = data[:, 2]
-    c = data[:, 3]
-
-    @test data[1,1] isa Float64
-    @test a isa Vector{Float64}
-    @test StateSpaceSet(a, b, c) == data
-    @test size(StateSpaceSet(a, b)) == (1001, 2)
-
-    @test data[5] isa SVector{3, Float64}
-    @test data[11:20] isa StateSpaceSet
-    @test data[:, 2:3][:, 1] == data[:, 2]
-
-    @test size(data[1:10,1:2]) == (10,2)
-    @test data[1:10,1:2] == StateSpaceSet(a[1:10], b[1:10])
-    @test data[1:10, SVector(1, 2)] == data[1:10, 1:2]
-    e = data[5, SVector(1,2)]
-    @test e isa SVector{2, Float64}
-
-    sub = view(data, 11:20)
-    @test sub isa StateSpaceSets.SubStateSpaceSet
-    @test sub[2] == data[12]
-    @test dimension(sub) == dimension(data)
-    d = sub[:, 1]
-    @test d isa Vector{Float64}
-    e = sub[5, 1:2]
-    @test e isa Vector{Float64}
-    @test length(e) == 2
-    e = sub[5, SVector(1,2)]
-    @test e isa SVector{2, Float64}
-    f = sub[5:8, 1:2]
-    @test f isa StateSpaceSet
-
-    # setindex
-    data[1] = SVector(0.1,0.1,0.1)
-    @test data[1] == SVector(0.1,0.1,0.1)
-    @test_throws ErrorException (data[:,1] .= 0)
-  end
-
-  @testset "copy" begin
-    d = StateSpaceSet(rand(10, 2))
-    v = vec(d)
-    d2 = copy(d)
-    d2[1] == d[1]
-    d2[1] = SVector(5.0, 5.0)
-    @test d2[1] != d[1]
-  end
-
-  @testset "minmax" begin
-    mi = minima(data)
-    ma = maxima(data)
-    mimi, mama = minmaxima(data)
-    @test mimi == mi
-    @test mama == ma
-    for i in 1:3
-      @test mi[i] < ma[i]
-      a,b = extrema(xs[i])
-      @test a == mi[i]
-      @test b == ma[i]
-    end
-  end
-
-  @testset "Conversions" begin
-    m = Matrix(data)
-    @test StateSpaceSet(m) == data
-
-    m = rand(1000, 4)
-    @test Matrix(StateSpaceSet(m)) == m
-  end
-
-  @testset "standardize" begin
-    r = standardize(data)
-    rs = columns(r)
-    for x in rs
-      m, s = mean(x), std(x)
-      @test abs(m) < 1e-8
-      @test abs(s - 1) < 1e-8
-    end
+@testset "standardize" begin
+  r = standardize(s)
+  rs = columns(r)
+  for x in rs
+    m, s = mean(x), std(x)
+    @test abs(m) < 1e-8
+    @test abs(s - 1) < 1e-8
   end
 end
 

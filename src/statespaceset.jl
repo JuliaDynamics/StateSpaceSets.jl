@@ -27,7 +27,7 @@ containertype(::AbstractStateSpaceSet{D,T,V}) where {D,T,V} = V
 # Base extensions
 ###########################################################################################
 for f in (
-        :length, :sort!, :iterate, :eachindex, :eachrow, :firstindex, :lastindex, :size,
+        :length, :sort!, :iterate, :firstindex, :lastindex, :size,
     )
     @eval Base.$(f)(d::AbstractStateSpaceSet, args...; kwargs...) = $(f)(vec(d), args...; kwargs...)
 end
@@ -85,98 +85,43 @@ function Base.dotview(d::AbstractStateSpaceSet, ::Colon, ::Int)
 end
 
 ###########################################################################
-# Appending
+# Appending/concatenating
 ###########################################################################
 Base.append!(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = (append!(vec(d1), vec(d2)); d1)
 Base.push!(d::AbstractStateSpaceSet, new_item) = (push!(vec(d), new_item); d)
+Base.vcat(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = append!(copy(d1), d2)
 
-function Base.hcat(d::AbstractStateSpaceSet{D, T, V}, x::AbstractVector{<:Real}) where {D, T, V}
-    L = length(d)
-    L == length(x) || error("statespaceset and vector must be of same length")
-    if V == SVector{D, T}
-        V2 = SVector{D+1, T}
-    else
-        V2 = V # it is `Vector{T}` instead
-    end
-    data = Vector{V2}(undef, L)
-    @inbounds for i in 1:L
-        if V == SVector{D, T}
-            e = V2(d[i]..., x[i])
-        else
-            e = vcat(d[i], x[i])
-        end
-        data[i] = e
-    end
-    return StateSpaceSet(data)
-end
-
-function Base.hcat(x::AbstractVector{<:Real}, d::AbstractStateSpaceSet{D, T, V}) where {D, T, V}
-    L = length(d)
-    L == length(x) || error("statespaceset and vector must be of same length")
-    if V == SVector{D, T}
-        V2 = SVector{D+1, T}
-    else
-        V2 = V # it is `Vector{T}` instead
-    end
-    data = Vector{V2}(undef, L)
-    @inbounds for i in 1:L
-        if V <: SVector
-            e = V2(x[i], d[i]...)
-        else
-            e = vcat(x[i], d[i])
-        end
-        data[i] = e
-    end
-    return StateSpaceSet(data)
-end
-
-function Base.hcat(ds::AbstractStateSpaceSet{<: Any, T}...) where {T}
-    Ls = length.(ds)
-    maxlen = maximum(Ls)
-    all(Ls .== maxlen) || error("StateSpaceSets must be of same length")
-    V = containertype(first(ds))
-    if V <: SVector
-        newdim = sum(dimension.(ds))
-        V2 = SVector{newdim, T}
-    else
-        V2 = V # it is `Vector`
-    end
-    v = Vector{V}(undef, maxlen)
-    for i = 1:maxlen
-        v[i] = V(collect(Iterators.flatten(d[i] for d in ds)))
-    end
-    return StateSpaceSet(v)
-end
-
-# TODO: This can probably be done more efficiently by pre-computing the size of the
-# `SVector`s, and doing something similar to the explicit two-argument versions above.
-# However, it's not immediately clear how to do this efficiently. This implementation
-# converts every input to a dataset first and promotes everything to a common type.
-# It's not optimal, because it allocates unnecessarily, but it works.
-# If this method is made more efficient, the method above can be dropped.
 function Base.hcat(xs::Union{AbstractVector{<:Real}, AbstractStateSpaceSet}...)
     ds = StateSpaceSet.(xs)
     Ls = length.(ds)
     maxlen = maximum(Ls)
     all(Ls .== maxlen) || error("StateSpaceSets must be of same length")
-    V = typeof(xs[1][1])
+    V = findcontainertype(xs...)
     newdim = sum(dimension.(ds))
     T = promote_type(eltype.(ds)...)
     if V <: SVector
         V2 = SVector{newdim, T}
     else
-        V2 = V # it is `Vector`
+        V2 = Vector{T}
     end
-    v = Vector{v}(undef, maxlen)
+    v = Vector{V2}(undef, maxlen)
     for i = 1:maxlen
         if V <: SVector
-            e = V(Iterators.flatten(d[i] for d in xs)...,)
+            e = V2(Iterators.flatten(d[i] for d in xs)...,)
         else
-            e = V(collect(Iterators.flatten(d[i] for d in xs)))
+            e = V2(collect(Iterators.flatten(d[i] for d in xs)))
         end
         v[i] = e
     end
     return StateSpaceSet(v)
+end
+
+function findcontainertype(xs::Union{AbstractVector{<:Real}, AbstractStateSpaceSet}...)
+    for x in xs
+        if x isa AbstractStateSpaceSet
+            return containertype(x)
+        end
+    end
 end
 
 #####################################################################################

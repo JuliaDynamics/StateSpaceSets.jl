@@ -61,12 +61,17 @@ StateSpaceSet{D, T}() where {D,T} = StateSpaceSet(SVector{D,T}[])
 StateSpaceSet{D, T}(s::StateSpaceSet{D, T}) where {D,T} = s
 StateSpaceSet(s::StateSpaceSet) = s
 StateSpaceSet{D,T}(v::Vector{V}) where {D,T,V<:AbstractVector} = StateSpaceSet{D,T,V}(v)
+function StateSpaceSet(v::Vector{V}) where {V<:AbstractVector}
+    n = length(v[1])
+    for p in v
+        length(p) != n && error("Inner vectors must all have same length")
+    end
+    return StateSpaceSet{n,eltype(v[1]),V}(v)
+end
 
 ###########################################################################
 # StateSpaceSet(Vectors of stuff)
 ###########################################################################
-StateSpaceSet(s::AbstractVector{T}) where {T<:Real} = StateSpaceSet(SVector.(s))
-
 function StateSpaceSet(vecs::AbstractVector{T}...; container = SVector) where {T<:Real}
     data = _ssset(vecs...)
     if container != SVector
