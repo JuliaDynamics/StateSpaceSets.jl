@@ -9,6 +9,7 @@ end StateSpaceSets
 
 
 include("statespaceset.jl")
+include("statespaceset_stats.jl")
 include("statespaceset_concrete.jl")
 include("timeseries.jl")
 include("neighborhoods.jl")
