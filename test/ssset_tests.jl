@@ -32,8 +32,7 @@ end
   @test length(q) == length(o)
   @test q isa Vector{Float64}
 
-
-  f(x) = x[1] = x[2]
+  f(x) = x[1] - x[2]
   r = f.(s)
   @test r isa Vector{Float64}
   @test all(x -> -2 < x < 2, r)
