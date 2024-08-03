@@ -7,31 +7,28 @@ export SVector, SMatrix
 export minmaxima, columns, standardize, dimension
 export cov, cor, mean_and_cov
 
-abstract type AbstractStateSpaceSet{D, T} end
+# D = dimension, T = element type, V = container type
+abstract type AbstractStateSpaceSet{D, T, V} <: AbstractVector{V} end
 
 # Core extensions and functions:
 """
     dimension(thing) -> D
 Return the dimension of the `thing`, in the sense of state-space dimensionality.
 """
-dimension(::AbstractStateSpaceSet{D,T}) where {D,T} = D
+dimension(::AbstractStateSpaceSet{D}) where {D,T} = D
 Base.eltype(::AbstractStateSpaceSet{D,T}) where {D,T} = T
-Base.vec(X::AbstractStateSpaceSet{D,T}) where {D,T} = X.data
-
-# TODO: This will break once we make SSS <: AbstractVector
-@inline Base.size(d::AbstractStateSpaceSet{D,T}) where {D,T} = (length(vec(d)), D)
-@inline Base.size(d::AbstractStateSpaceSet, i) = size(d)[i]
+Base.vec(X::AbstractStateSpaceSet) = X.data
 
 ###########################################################################################
 # Base extensions
 ###########################################################################################
 for f in (
-        :length, :sort!, :iterate, :eachindex, :eachrow, :firstindex,
+        :length, :sort!, :iterate, :eachindex, :eachrow, :firstindex, :lastindex, :size,
     )
     @eval Base.$(f)(d::AbstractStateSpaceSet, args...; kwargs...) = $(f)(vec(d), args...; kwargs...)
 end
 
-Base.:(==)(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = d1.data == d2.data
+Base.:(==)(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = vec(d1) == vec(d2)
 Base.copy(d::AbstractStateSpaceSet) = typeof(d)(copy(vec(d)))
 Base.sort(d::AbstractStateSpaceSet) = sort!(copy(d))
 @inline Base.eltype(::Type{<:AbstractStateSpaceSet{D, T}}) where {D, T} = SVector{D, T}
@@ -79,7 +76,7 @@ StateSpaceSet([d[i][v] for i in v1])
 @inline Base.setindex!(d::AbstractStateSpaceSet, v, i::Int) = (vec(d)[i] = v)
 
 function Base.dotview(d::AbstractStateSpaceSet, ::Colon, ::Int)
-    error("`setindex!` is not defined for Datasets and the given arguments. "*
+    error("`setindex!` is not defined for StateSpaceSets and the given arguments. "*
     "Best to create a new dataset or `Vector{SVector}` instead of in-place operations.")
 end
 
