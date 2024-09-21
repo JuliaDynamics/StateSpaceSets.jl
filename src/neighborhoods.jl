@@ -6,13 +6,10 @@ using Neighborhood, Distances
 export WithinRange, NeighborNumber
 export Euclidean, Chebyshev, Cityblock
 
-Neighborhood.KDTree(D::AbstractStateSpaceSet, metric::Metric = Euclidean(); kwargs...) =
-KDTree(vec(D), metric; kwargs...)
-
 # Convenience extensions for ::StateSpaceSet in bulksearches
 for f ∈ (:bulkisearch, :bulksearch)
     for nt ∈ (:NeighborNumber, :WithinRange)
         @eval Neighborhood.$(f)(ss::KDTree, D::AbstractStateSpaceSet, st::$nt, args...; kwargs...) =
-        $(f)(ss, D.data, st, args...; kwargs...)
+        $(f)(ss, vec(D), st, args...; kwargs...)
     end
 end

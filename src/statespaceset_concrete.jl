@@ -1,7 +1,7 @@
 export StateSpaceSet
 
 """
-    StateSpaceSet{D, T, V} <: AbstractVector{V}
+    StateSpaceSet{D, T<:Real, V} <: AbstractVector{V}
 
 A dedicated interface for sets in a state space.
 It is an **ordered container of equally-sized points** of length `D`,
@@ -20,13 +20,13 @@ When iterated over, it iterates over its contained points.
 
 Constructing a `StateSpaceSet` is done in three ways:
 
-1. By giving in each individual **columns** of the state space set as `Vector{<:Real}`,
-   as in `StateSpaceSet(x, y, z, ...)`.
-2. By giving in a matrix whose rows are the state space points `StateSpaceSet(m)`.
-3. By giving in directly a vector of vectors `StateSpaceSet(v_of_v)`.
+1. By giving in each individual **columns** of the state space set as `Vector{<:Real}`:
+   `StateSpaceSet(x, y, z, ...)`.
+2. By giving in a matrix whose rows are the state space points: `StateSpaceSet(m)`.
+3. By giving in directly a vector of vectors (state space points): `StateSpaceSet(v_of_v)`.
 
-The first two constructors allow for the keyword `container` which sets the type of `V`.
-At the moment options are only `SVector` or `Vector`, and by default `SVector` is used.
+All constructors allow for the keyword `container` which sets the type of `V` (the type of inner vectors).
+At the moment options are only `SVector`, `MVector`, or `Vector`, and by default `SVector` is used.
 
 ## Description of indexing
 
@@ -61,12 +61,32 @@ StateSpaceSet{D, T}() where {D,T} = StateSpaceSet(SVector{D,T}[])
 StateSpaceSet{D, T}(s::StateSpaceSet{D, T}) where {D,T} = s
 StateSpaceSet(s::StateSpaceSet) = s
 StateSpaceSet{D,T}(v::Vector{V}) where {D,T,V<:AbstractVector} = StateSpaceSet{D,T,V}(v)
+function StateSpaceSet(v::Vector{V}; container = SVector) where {V<:AbstractVector}
+    n = length(v[1])
+    t = eltype(v[1])
+    for p in v
+        length(p) != n && error("Inner vectors must all have same length")
+    end
+    # TODO: There must be a way to generalize this to any container!
+    # we can use `Base.typename(typeof(v[1])).wrapper` but this is so internal... :(
+    if container <: SVector
+        U = SVector{n, t}
+    elseif container <: MVector
+        U = MVector{n, t}
+    else
+        U = Vector{t}
+    end
+    if U != V
+        u = U.(v)
+    else
+        u = v
+    end
+    return StateSpaceSet{n,t,U}(u)
+end
 
 ###########################################################################
 # StateSpaceSet(Vectors of stuff)
 ###########################################################################
-StateSpaceSet(s::AbstractVector{T}) where {T<:Real} = StateSpaceSet(SVector.(s))
-
 function StateSpaceSet(vecs::AbstractVector{T}...; container = SVector) where {T<:Real}
     data = _ssset(vecs...)
     if container != SVector
@@ -113,7 +133,13 @@ function StateSpaceSet(mat::AbstractMatrix{T}; warn = true, container = SVector)
     N, D = size(mat)
     warn && D > 100 && @warn "You are attempting to make a StateSpaceSet of dimensions > 100"
     warn && D > N && @warn "You are attempting to make a StateSpaceSet of a matrix with more columns than rows."
-    V = container == SVector ? SVector{D,T} : Vector{T}
+    if container <: SVector
+        V = SVector{D,T}
+    elseif container <: MVector
+        V = MVector{D,T}
+    else
+        V = Vector{T}
+    end
     data = [V(row) for row in eachrow(mat)]
     StateSpaceSet{D,T}(data)
 end
