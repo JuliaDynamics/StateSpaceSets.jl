@@ -3,7 +3,7 @@ using Base.Iterators: flatten
 using Statistics
 
 export AbstractStateSpaceSet, minima, maxima
-export SVector, SMatrix
+export SVector, SMatrix, MVector
 export minmaxima, columns, standardize, dimension
 export cov, cor, mean_and_cov
 

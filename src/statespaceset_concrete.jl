@@ -67,6 +67,8 @@ function StateSpaceSet(v::Vector{V}; container = SVector) where {V<:AbstractVect
     for p in v
         length(p) != n && error("Inner vectors must all have same length")
     end
+    # TODO: There must be a way to generalize this to any container!
+    # we can use `Base.typename(typeof(v[1])).wrapper` but this is so internal... :(
     if container <: SVector
         U = SVector{n, t}
     elseif container <: MVector

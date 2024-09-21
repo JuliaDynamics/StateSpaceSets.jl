@@ -21,6 +21,15 @@ s = StateSpaceSet(o)
     @test length(q) == 10
   end
 
+  @testset "MVector" begin
+    m1 = StateSpaceSet(x, y; container = MVector)
+    @test m1[1] isa MVector
+    m2 = StateSpaceSet(rand(10,10); container = MVector)
+    @test m2[1] isa MVector
+    m3 = StateSpaceSet([rand(3) for _ in 1:10]; container = MVector)
+    @test m3[1] isa MVector
+  end
+
 end
 
 
