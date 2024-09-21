@@ -10,7 +10,7 @@ export cov, cor, mean_and_cov
 # D = dimension, T = element type, V = container type
 # note that the container type is given as keyword `container` to
 # all functions that somehow end up making a state space set.
-abstract type AbstractStateSpaceSet{D, T, V} <: AbstractVector{V} end
+abstract type AbstractStateSpaceSet{D, T<:Real, V} <: AbstractVector{V} end
 
 # Core extensions and functions:
 """
