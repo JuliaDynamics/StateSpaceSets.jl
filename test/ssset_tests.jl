@@ -30,6 +30,11 @@ s = StateSpaceSet(o)
     @test m3[1] isa MVector
   end
 
+  @testset "not reals" begin
+    q = fill("a", 10)
+    @test_throws MethodError StateSpaceSet(q)
+  end
+
 end
 
 
