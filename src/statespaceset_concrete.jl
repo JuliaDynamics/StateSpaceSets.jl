@@ -1,11 +1,11 @@
 export StateSpaceSet
 
 """
-    StateSpaceSet{D, T<:Real, V} <: AbstractVector{V}
+    StateSpaceSet{D, T, V} <: AbstractVector{V}
 
 A dedicated interface for sets in a state space.
 It is an **ordered container of equally-sized points** of length `D`,
-with element type `T<:Real`,
+with element type `T`,
 represented by a vector of type `V`. Typically `V` is `SVector{D,T}` or `Vector{T}`
 and the data are always stored internally as `Vector{V}`.
 
@@ -86,7 +86,7 @@ end
 ###########################################################################
 # StateSpaceSet(Vectors of stuff)
 ###########################################################################
-function StateSpaceSet(vecs::AbstractVector{T}...; container = SVector) where {T<:Real}
+function StateSpaceSet(vecs::AbstractVector{T}...; container = SVector) where {T}
     data = _ssset(vecs...)
     if container != SVector
         data = container.(data)
@@ -96,7 +96,7 @@ function StateSpaceSet(vecs::AbstractVector{T}...; container = SVector) where {T
     return StateSpaceSet{D,T,V}(data)
 end
 
-@generated function _ssset(vecs::AbstractVector{T}...) where {T<:Real}
+@generated function _ssset(vecs::AbstractVector{T}...) where {T}
     D = length(vecs)
     gens = [:(vecs[$k][i]) for k=1:D]
     quote

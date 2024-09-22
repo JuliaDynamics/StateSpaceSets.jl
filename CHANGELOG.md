@@ -1,8 +1,13 @@
 Changelog for StateSpaceSets.jl is kept w.r.t. version 1.3
 
+# 2.1
+
+It is allowed to make `StateSpaceSet` with points of arbitrary `eltype` now.
+Please don't use `Complex` numbers as the `eltype`!
+
 # 2.0
 
-- `StateSpaceSet` now subtypes `AbstractVector`, in particular `StateSpaceSet{V<:AbstractVector} <: AbstractVector{V}`. This leads to the breaking change that `size(ssset) = (length(ssset), )` while before `size` was `length(ssset), dimension(ssset)`. Now you have to use `dimension(ssset)` exclusively to get the "number of columns" in the state space set.
+- `StateSpaceSet` now subtypes `AbstractVector`, in particular `StateSpaceSet{V<:AbstractVector} <: AbstractVector{V}`. This leads to the breaking change that `size(ssset) = (length(ssset), )` while before `size` was `(length(ssset), dimension(ssset))`. Now you have to use `dimension(ssset)` exclusively to get the "number of columns" in the state space set.
 - `StateSpaceSet` now supports arbitrary inner vectors as state space points.
   The keyword `container` can be given to all functions that make state space sets
   and sets the type of the container of the inner vectors. This is the abstract type
