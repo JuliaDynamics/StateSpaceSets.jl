@@ -30,11 +30,13 @@ s = StateSpaceSet(o)
     @test m3[1] isa MVector
   end
 
-  @testset "not reals" begin
-    q = fill("a", 10)
-    @test_throws MethodError StateSpaceSet(q)
+  @testset "nonreal element" begin
+    ff = fill("ff", 10)
+    tt = fill("tt", 10)
+    ss = StateSpaceSet(ff, tt)
+    @test dimension(ss) == 2
+    @test eltype(ss) == String
   end
-
 end
 
 
