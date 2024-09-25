@@ -2,7 +2,7 @@ name = "StateSpaceSets"
 uuid = "40b095a5-5852-4c12-98c7-d43bf788e795"
 authors = ["George Datseris <datseris.george@gmail.com>"]
 repo = "https://github.com/JuliaDynamics/StateSpaceSets.jl.git"
-version = "2.1.0"
+version = "2.1.1"
 
 [deps]
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"

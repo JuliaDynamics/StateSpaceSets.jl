@@ -155,3 +155,8 @@ end
   @test Statistics.cov(Matrix(x)) ≈ StateSpaceSets.cov(x)
   @test Statistics.cor(Matrix(x)) ≈ StateSpaceSets.cor(x)
 end
+
+@testset "#34 hcat type piracy" begin
+  u = hcat(1:3, ones(3))
+  @test size(u) == (3, 2)
+end

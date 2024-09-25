@@ -91,7 +91,11 @@ Base.append!(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = (append!(ve
 Base.push!(d::AbstractStateSpaceSet, new_item) = (push!(vec(d), new_item); d)
 Base.vcat(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = append!(copy(d1), d2)
 
-function Base.hcat(xs::Union{AbstractVector{<:Real}, AbstractStateSpaceSet}...)
+Base.hcat(x::AbstractVector{<:Real}, y::AbstractStateSpaceSet...) = _hcat(x, y...)
+Base.hcat(y::AbstractStateSpaceSet, x::AbstractVector...) = _hcat(y, x...)
+Base.hcat(z::AbstractVector{<:Real}, y::AbstractStateSpaceSet, x::AbstractVector...) = _hcat(z, y, x...)
+
+function _hcat(xs::Union{AbstractVector{<:Real}, AbstractStateSpaceSet}...)
     ds = StateSpaceSet.(xs)
     Ls = length.(ds)
     maxlen = maximum(Ls)
@@ -115,6 +119,8 @@ function Base.hcat(xs::Union{AbstractVector{<:Real}, AbstractStateSpaceSet}...)
     end
     return StateSpaceSet(v; container = V2)
 end
+
+
 
 function findcontainertype(xs::Union{AbstractVector{<:Real}, AbstractStateSpaceSet}...)
     for x in xs
