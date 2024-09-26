@@ -54,7 +54,7 @@ struct StateSpaceSet{D, T, V<:AbstractVector} <: AbstractStateSpaceSet{D,T,V}
     data::Vector{V}
 end
 # Empty dataset:
-StateSpaceSet{D, T}() where {D,T} = StateSpaceSet(SVector{D,T}[])
+StateSpaceSet{D, T}() where {D,T} = StateSpaceSet{D,T,SVector{D,T}}(SVector{D,T}[])
 
 # Identity constructor:
 StateSpaceSet{D, T}(s::StateSpaceSet{D, T}) where {D,T} = s
