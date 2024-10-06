@@ -1,5 +1,9 @@
 Changelog for StateSpaceSets.jl is kept w.r.t. version 1.3
 
+# 2.2
+
+- Allow construction of `StateSpaceSet`s from existing `StateSpaceSet`s (this just calls `hcat` under the hood).
+
 # 2.1
 
 It is allowed to make `StateSpaceSet` with points of arbitrary `eltype` now.

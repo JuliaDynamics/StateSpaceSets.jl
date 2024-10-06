@@ -10,10 +10,13 @@ s = StateSpaceSet(o)
   x = rand(10)
   y = rand(10)
   z = rand(10, 4)
-
+  w = rand(10, 2)
   s1 = StateSpaceSet(x)
   s2 = StateSpaceSet(x, y)
   s3 = StateSpaceSet(z)
+  s4 = StateSpaceSet(w)
+
+  @test dimension(StateSpaceSet(s3, s4)) == 6
 
   for (i, q) in enumerate((s1, s2, s, s3))
     @test dimension(q) == i
