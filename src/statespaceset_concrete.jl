@@ -83,6 +83,11 @@ function StateSpaceSet(v::Vector{V}; container = SVector) where {V<:AbstractVect
     return StateSpaceSet{n,t,U}(u)
 end
 
+# Concatenating existing state space sets
+function StateSpaceSet(xs::AbstractStateSpaceSet...)
+    return hcat(xs...)
+end
+
 ###########################################################################
 # StateSpaceSet(Vectors of stuff)
 ###########################################################################
