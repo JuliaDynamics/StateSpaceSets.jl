@@ -15,8 +15,10 @@ Possible `distance` types are:
 - [`Centroid`](@ref), which is the default, and 100s of times faster than the rest
 - [`Hausdorff`](@ref)
 - [`StrictlyMinimumDistance`](@ref)
+- Any function `f(A, B)` that returns the distance between two state space sets `A, B`.
 """
 set_distance(d1, d2) = set_distance(d1, d2, Centroid())
+set_distance(d1, d2, f::Function) = f(d1, d2)
 
 """
     Centroid(metric = Euclidean())
@@ -139,12 +141,10 @@ end
 Calculate distances between sets of `StateSpaceSet`s. Here  `a₊, a₋` are containers of
 `StateSpaceSet`s, and the returned distances are dictionaries of distances.
 Specifically, `distances[i][j]` is the distance of the set in
-the `i` key of `a₊` to the `j` key of `a₋`. Notice that distances from `a₋` to
-`a₊` are not computed at all (assumming symmetry in the distance function).
+the `i` key of `a₊` to the `j` key of `a₋`. Distances from `a₋` to
+`a₊` are not computed at all, assumming symmetry in the distance function.
 
-The `distance` can be as in [`set_distance`](@ref), or it can be an arbitrary function
-that takes as input two state space sets and returns any positive-definite number
-as their "distance".
+The `distance` can be anything valid for [`set_distance`](@ref).
 """
 function setsofsets_distances(a₊, a₋, method = Centroid())
     (isempty(a₊) || isempty(a₋)) && error("The set containers must be non-empty.")

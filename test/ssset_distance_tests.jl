@@ -9,6 +9,9 @@ using Test, StateSpaceSets
         d1 = StateSpaceSet([SVector(0.0, 1)])
         d2 = StateSpaceSet([SVector(1.0, 2)])
         @test set_distance(d1, d2, StrictlyMinimumDistance(Chebyshev())) == 1.0
+
+        f = (A, B) -> abs(A[1][1] - B[1][1])
+        @test set_distance(StateSpaceSet(d1), StateSpaceSet(d2), f) == 10.0
     end
 
     @testset "Hausdorff" begin
