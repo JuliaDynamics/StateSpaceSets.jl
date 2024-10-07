@@ -20,6 +20,11 @@ Possible `distance` types are:
 set_distance(d1, d2) = set_distance(d1, d2, Centroid())
 set_distance(d1, d2, f::Function) = f(d1, d2)
 
+# the following dispatch allows us to cheat and use downstream
+# the same 5-argument version of the function irrespectively of
+# the distance type with pre-initialized trees.
+set_distance(d1, d2, f, t1, t2) = set_distance(d1, d2, f)
+
 """
     Centroid(metric = Euclidean())
 
