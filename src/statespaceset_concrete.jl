@@ -1,4 +1,4 @@
-export StateSpaceSet
+export StateSpaceSet, SSSet
 
 """
     StateSpaceSet{D, T, V} <: AbstractVector{V}
@@ -8,6 +8,7 @@ It is an **ordered container of equally-sized points** of length `D`,
 with element type `T`,
 represented by a vector of type `V`. Typically `V` is `SVector{D,T}` or `Vector{T}`
 and the data are always stored internally as `Vector{V}`.
+`SSSet` is an alias for `StateSpaceSet`.
 
 The underlying `Vector{V}` can be obtained by `vec(ssset)`, although this is almost
 never necessary because `StateSpaceSet` subtypes `AbstractVector` and extends its interface.
@@ -53,6 +54,7 @@ i.e. all columns of the dataset in a tuple.
 struct StateSpaceSet{D, T, V<:AbstractVector} <: AbstractStateSpaceSet{D,T,V}
     data::Vector{V}
 end
+const SSSet = StateSpaceSet # alias
 # Empty dataset:
 StateSpaceSet{D, T}() where {D,T} = StateSpaceSet{D,T,SVector{D,T}}(SVector{D,T}[])
 

@@ -1,5 +1,11 @@
 Changelog for StateSpaceSets.jl is kept w.r.t. version 1.3
 
+# 2.3
+
+- `set_distance` now also allows any arbitrary function `f`.
+  This simplifies the docstring of `setsofsets_distances` as well.
+- `SSSet` is now an exported alias to `StateSpaceSet`.
+
 # 2.2
 
 - Allow construction of `StateSpaceSet`s from existing `StateSpaceSet`s (this just calls `hcat` under the hood).

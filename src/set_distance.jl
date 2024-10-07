@@ -15,8 +15,10 @@ Possible `distance` types are:
 - [`Centroid`](@ref), which is the default, and 100s of times faster than the rest
 - [`Hausdorff`](@ref)
 - [`StrictlyMinimumDistance`](@ref)
+- Any function `f(A, B)` that returns the distance between two state space sets `A, B`.
 """
 set_distance(d1, d2) = set_distance(d1, d2, Centroid())
+set_distance(d1, d2, f::Function; kw...) = f(d1, d2)
 
 """
     Centroid(metric = Euclidean())
@@ -33,7 +35,7 @@ struct Centroid{M}
 end
 Centroid() = Centroid(Euclidean())
 
-function set_distance(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet, c::Centroid)
+function set_distance(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet, c::Centroid; kw...)
     c1, c2 = centroid(d1), centroid(d2)
     return c.metric(c1, c2)
 end
@@ -57,8 +59,8 @@ struct Hausdorff{M<:Metric}
 end
 Hausdorff() = Hausdorff(Euclidean())
 
-function set_distance(d1::AbstractStateSpaceSet, d2, h::Hausdorff,
-        # trees given for a natural way to call this function in `setsofsets_distances`
+function set_distance(d1::AbstractStateSpaceSet, d2, h::Hausdorff;
+        # trees given for performance optimizations downstream
         tree1 = KDTree(d1, h.metric),
         tree2 = KDTree(d2, h.metric),
     )
@@ -92,12 +94,13 @@ StrictlyMinimumDistance() = StrictlyMinimumDistance(false, Euclidean())
 StrictlyMinimumDistance(m::Metric) = StrictlyMinimumDistance(false, m)
 StrictlyMinimumDistance(brute::Bool) = StrictlyMinimumDistance(brute, Euclidean())
 
-function set_distance(d1, d2::AbstractStateSpaceSet, m::StrictlyMinimumDistance)
+function set_distance(d1, d2::AbstractStateSpaceSet, m::StrictlyMinimumDistance;
+        tree1 = nothing, tree2 = KDTree(d2, m.metric)
+    )
     if m.brute
         return set_distance_brute(d1, d2, m.metric)
     else
-        tree = KDTree(d2, m.metric)
-        return set_distance_tree(d1, tree)
+        return set_distance_tree(d1, tree2)
     end
 end
 
@@ -139,12 +142,10 @@ end
 Calculate distances between sets of `StateSpaceSet`s. Here  `a₊, a₋` are containers of
 `StateSpaceSet`s, and the returned distances are dictionaries of distances.
 Specifically, `distances[i][j]` is the distance of the set in
-the `i` key of `a₊` to the `j` key of `a₋`. Notice that distances from `a₋` to
-`a₊` are not computed at all (assumming symmetry in the distance function).
+the `i` key of `a₊` to the `j` key of `a₋`. Distances from `a₋` to
+`a₊` are not computed at all, assumming symmetry in the distance function.
 
-The `distance` can be as in [`set_distance`](@ref), or it can be an arbitrary function
-that takes as input two state space sets and returns any positive-definite number
-as their "distance".
+The `distance` can be anything valid for [`set_distance`](@ref).
 """
 function setsofsets_distances(a₊, a₋, method = Centroid())
     (isempty(a₊) || isempty(a₋)) && error("The set containers must be non-empty.")
@@ -177,7 +178,7 @@ function _setsofsets_distances!(distances, a₊, a₋, method::Hausdorff)
         tree1 = trees₊[k]
         for (m, tree2) in trees₋
             # Internal method of `set_distance` for Hausdorff
-            d = set_distance(A, a₋[m], method, tree1, tree2)
+            d = set_distance(A, a₋[m], method; tree1, tree2)
             distances[k][m] = d
         end
     end
@@ -202,12 +203,7 @@ function _setsofsets_distances!(distances, a₊, a₋, method::StrictlyMinimumDi
     @inbounds for (k, A) in pairs(a₊)
         distances[k] = pairs(valtype(distances)())
         for (m, B) in pairs(a₋)
-            if method.brute == false
-                # Internal method of `set_distance` for non-brute way
-                d = set_distance_tree(A, search_trees[m])
-            else
-                d = set_distance_brute(A, B, method.metric)
-            end
+            d = set_distance(A, B, method; tree2 = search_trees[m])
             distances[k][m] = d
         end
     end

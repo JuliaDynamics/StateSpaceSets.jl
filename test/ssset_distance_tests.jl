@@ -4,11 +4,16 @@ using Test, StateSpaceSets
     @testset "metric" begin
         d1 = float.(range(1, 10; length = 11))
         d2 = d1 .+ 10
+
+        f = (A, B) -> abs(A[1][1] - B[1][1])
+        @test set_distance(StateSpaceSet(d1), StateSpaceSet(d2), f) == 10.0
+
         @test set_distance(StateSpaceSet(d1), StateSpaceSet(d2), StrictlyMinimumDistance()) == 1.0
         @test set_distance(StateSpaceSet(d1), StateSpaceSet(d2), StrictlyMinimumDistance(true)) == 1.0
         d1 = StateSpaceSet([SVector(0.0, 1)])
         d2 = StateSpaceSet([SVector(1.0, 2)])
         @test set_distance(d1, d2, StrictlyMinimumDistance(Chebyshev())) == 1.0
+
     end
 
     @testset "Hausdorff" begin
