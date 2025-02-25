@@ -152,12 +152,13 @@ the `i` key of `a₊` to the `j` key of `a₋`. Distances from `a₋` to
 `a₊` are not computed at all, assumming symmetry in the distance function.
 
 The `distance` can be anything valid for [`set_distance`](@ref).
+
+Containers `a₊, a₋` can be empty but they must be concretely typed.
 """
 function setsofsets_distances(a₊, a₋, method = Centroid())
-    (isempty(a₊) || isempty(a₋)) && error("The set containers must be non-empty.")
     ids₊, ids₋ = keys(a₊), keys(a₋)
-    gettype = a -> eltype(first(values(a)))
-    T = promote_type(gettype(a₊), gettype(a₋))
+    numbertype = a -> eltype(eltype(valtype(a)))
+    T = promote_type(numbertype(a₊), numbertype(a₋))
     distances = Dict{eltype(ids₊), Dict{eltype(ids₋), T}}()
     _setsofsets_distances!(distances, a₊, a₋, method)
 end
@@ -175,7 +176,6 @@ function _setsofsets_distances!(distances, a₊, a₋, c::Centroid)
 end
 
 function _setsofsets_distances!(distances, a₊, a₋, method::Hausdorff)
-    @assert keytype(a₊) == keytype(a₋)
     metric = method.metric
     trees₊ = Dict(m => KDTree(vec(att), metric) for (m, att) in pairs(a₊))
     trees₋ = Dict(m => KDTree(vec(att), metric) for (m, att) in pairs(a₋))

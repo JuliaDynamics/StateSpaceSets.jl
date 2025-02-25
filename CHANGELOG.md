@@ -1,5 +1,10 @@
 Changelog for StateSpaceSets.jl is kept w.r.t. version 1.3
 
+# 2.4
+
+- Containers in `setsofsets_distances` can now be both empty. They must be concretely typed.
+- Fixed some inconsistency in `eltype(ssset)`. Now it always returns the type of the contained points. Before it was ambiguously defined and could return the number type.
+
 # 2.3
 
 - `set_distance` now also allows any arbitrary function `f`.

@@ -19,7 +19,6 @@ abstract type AbstractStateSpaceSet{D, T, V} <: AbstractVector{V} end
 Return the dimension of the `thing`, in the sense of state-space dimensionality.
 """
 dimension(::AbstractStateSpaceSet{D}) where {D} = D
-Base.eltype(::AbstractStateSpaceSet{D,T}) where {D,T} = T
 Base.vec(X::AbstractStateSpaceSet) = X.data
 containertype(::AbstractStateSpaceSet{D,T,V}) where {D,T,V} = V
 
@@ -35,7 +34,8 @@ end
 Base.:(==)(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = vec(d1) == vec(d2)
 Base.copy(d::AbstractStateSpaceSet) = typeof(d)(copy(vec(d)))
 Base.sort(d::AbstractStateSpaceSet) = sort!(copy(d))
-@inline Base.eltype(::Type{<:AbstractStateSpaceSet{D, T}}) where {D, T} = SVector{D, T}
+@inline Base.eltype(::Type{<:AbstractStateSpaceSet{D, T, V}}) where {D, T, V} = V
+@inline Base.eltype(::AbstractStateSpaceSet{D, T, V}) where {D, T, V} = V
 @inline Base.IteratorSize(::Type{<:AbstractStateSpaceSet}) = Base.HasLength()
 Base.eachcol(ds::AbstractStateSpaceSet) = (ds[:, i] for i in 1:dimension(ds))
 
