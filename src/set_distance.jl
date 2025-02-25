@@ -113,9 +113,9 @@ end
 # The comparison version exists because when passing `>` it is used in `Hausdorf`
 function set_distance_tree(d1, tree::KDTree, comparison = <)
     if comparison === <
-        ε = eltype(d1)(Inf)
+        ε = eltype(eltype(d1))(Inf)
     elseif comparison === >
-        ε = eltype(d1)(-Inf)
+        ε = eltype(eltype(d1))(-Inf)
     end
     # We use internal source code extracted from NearestNeighbors.jl for max performance
     dist, idx = [ε], [0]
@@ -129,7 +129,7 @@ function set_distance_tree(d1, tree::KDTree, comparison = <)
 end
 
 function set_distance_brute(d1, d2::AbstractStateSpaceSet, metric = Euclidean())
-    ε = eltype(d2)(Inf)
+    ε = eltype(eltype(d2))(Inf)
     for x ∈ d1
         for y ∈ d2
             εnew = metric(x, y)
