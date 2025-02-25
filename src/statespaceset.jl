@@ -101,7 +101,7 @@ function _hcat(xs::Union{AbstractVector{<:Real}, AbstractStateSpaceSet}...)
     all(Ls .== maxlen) || error("StateSpaceSets must be of same length")
     V = findcontainertype(xs...)
     newdim = sum(dimension.(ds))
-    T = promote_type(eltype.(ds)...)
+    T = promote_type(eltype.(eltype.(ds))...)
     if V <: SVector
         V2 = SVector{newdim, T}
     else
@@ -140,7 +140,7 @@ end
 function matstring(d::AbstractStateSpaceSet{D, T}) where {D, T}
     N = length(d)
     if N > 50
-        mat = zeros(eltype(d), 50, D)
+        mat = zeros(eltype(eltype(d)), 50, D)
         for (i, a) in enumerate(flatten((1:25, N-24:N)))
             mat[i, :] .= d[a]
         end
