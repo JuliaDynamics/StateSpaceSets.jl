@@ -35,7 +35,6 @@ Base.:(==)(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = vec(d1) == ve
 Base.copy(d::AbstractStateSpaceSet) = typeof(d)(copy(vec(d)))
 Base.sort(d::AbstractStateSpaceSet) = sort!(copy(d))
 @inline Base.eltype(::Type{<:AbstractStateSpaceSet{D, T, V}}) where {D, T, V} = V
-@inline Base.eltype(::AbstractStateSpaceSet{D, T, V}) where {D, T, V} = V
 @inline Base.IteratorSize(::Type{<:AbstractStateSpaceSet}) = Base.HasLength()
 Base.eachcol(ds::AbstractStateSpaceSet) = (ds[:, i] for i in 1:dimension(ds))
 

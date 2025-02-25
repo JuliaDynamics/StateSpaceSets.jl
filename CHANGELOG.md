@@ -3,7 +3,7 @@ Changelog for StateSpaceSets.jl is kept w.r.t. version 1.3
 # 2.4
 
 - Containers in `setsofsets_distances` can now be both empty. They must be concretely typed.
-- Fixed some inconsistency in `eltype(ssset)`. Now it always returns the type of the contained points. Before it was ambiguously defined and could return the number type.
+- Fixed a critical bug where `eltype(ssset)` would return the element type of the stored points (e.g., `Float64`), instead of the type of the points themselves (e.g., `SVector{2, Float64}`). To be consistent with the Array interface and base Julia the correct return value is the type of the points themselves. Use `eltype(eltype(ssset))` to obtain the number type of the points.
 
 # 2.3
 

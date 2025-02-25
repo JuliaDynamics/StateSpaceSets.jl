@@ -38,7 +38,7 @@ s = StateSpaceSet(o)
     tt = fill("tt", 10)
     ss = StateSpaceSet(ff, tt)
     @test dimension(ss) == 2
-    @test eltype(ss) == String
+    @test eltype(eltype(ss)) == String
   end
 end
 
