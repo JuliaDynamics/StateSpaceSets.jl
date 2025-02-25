@@ -157,7 +157,7 @@ Containers `a₊, a₋` can be empty but they must be concretely typed.
 """
 function setsofsets_distances(a₊, a₋, method = Centroid())
     ids₊, ids₋ = keys(a₊), keys(a₋)
-    numbertype = a -> eltype(eltype(valtype(a)))
+    numbertype = a -> eltype(eltype(valtype(a))) # numeric type = type of distance
     T = promote_type(numbertype(a₊), numbertype(a₋))
     distances = Dict{eltype(ids₊), Dict{eltype(ids₋), T}}()
     _setsofsets_distances!(distances, a₊, a₋, method)
