@@ -90,4 +90,11 @@ end
         @test dsds[2][1] == 1
         @test dsds[1][2] == 1
     end
+
+    @testset "empty sets" begin
+        d = StateSpaceSet{2, Float64}()
+        set = Dict{Int, typeof(d)}()
+        dsds = setsofsets_distances(set, set)
+        @test isempty(dsds)
+    end
 end
