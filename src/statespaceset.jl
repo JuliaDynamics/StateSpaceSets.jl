@@ -32,7 +32,7 @@ for f in (
 end
 
 Base.:(==)(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = vec(d1) == vec(d2)
-Base.copy(d::AbstractStateSpaceSet) = typeof(d)(copy(vec(d)))
+Base.copy(d::AbstractStateSpaceSet) = StateSpaceSet(copy(vec(d)); names = d.names)
 Base.sort(d::AbstractStateSpaceSet) = sort!(copy(d))
 @inline Base.eltype(::Type{<:AbstractStateSpaceSet{D, T, V}}) where {D, T, V} = V
 @inline Base.IteratorSize(::Type{<:AbstractStateSpaceSet}) = Base.HasLength()

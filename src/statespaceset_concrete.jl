@@ -191,7 +191,7 @@ struct SubStateSpaceSet{D, T, V, N, P<:AbstractStateSpaceSet{D,T,V,N}, S<:SubArr
         T = eltype(SV)
         D = length(SV)
         V = containertype(par)
-        N = eltype(parent.names)
+        N = eltype(par.names)
         new{D,T,V,N,P,S}(par, data)
     end
 end
