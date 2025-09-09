@@ -150,7 +150,11 @@ end
 #####################################################################################
 function Base.summary(d::AbstractStateSpaceSet{D, T}) where {D, T}
     N = length(d)
-    return "$D-dimensional $(nameof(typeof(d))){$(T)} with $N points"
+    s = "$D-dimensional $(nameof(typeof(d))){$(T)} with $N points"
+    if !isnothing(d.names)
+        s *= "\nand named dimensions: $(join(d.names, ", "))"
+    end
+    return s
 end
 
 function matstring(d::AbstractStateSpaceSet{D, T}) where {D, T}
