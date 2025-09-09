@@ -60,8 +60,17 @@ If you have various timeseries vectors `x, y, z, ...` pass them like
 `StateSpaceSet(x, y, z, ...)`. You can use `columns(dataset)` to obtain the reverse,
 i.e. all columns of the dataset in a tuple.
 """
-struct StateSpaceSet{D, T, V<:AbstractVector} <: AbstractStateSpaceSet{D,T,V}
+struct StateSpaceSet{D, T, V<:AbstractVector, N} <: AbstractStateSpaceSet{D,T,V,N}
     data::Vector{V}
+    names::N
+    function StateSpaceSet{D, T, V, N}(data, names)
+        if !isnothing(names)
+            if length(names) != D
+                error("Given names must be as many as the dimension of the set!")
+            end
+        end
+        return new{D, T, V, N}(data, names)
+    end
 end
 const SSSet = StateSpaceSet # alias
 # Empty dataset:
@@ -70,8 +79,7 @@ StateSpaceSet{D, T}() where {D,T} = StateSpaceSet{D,T,SVector{D,T}}(SVector{D,T}
 # Identity constructor:
 StateSpaceSet{D, T}(s::StateSpaceSet{D, T}) where {D,T} = s
 StateSpaceSet(s::StateSpaceSet) = s
-StateSpaceSet{D,T}(v::Vector{V}) where {D,T,V<:AbstractVector} = StateSpaceSet{D,T,V}(v)
-function StateSpaceSet(v::Vector{V}; container = SVector) where {V<:AbstractVector}
+function StateSpaceSet(v::Vector{V}; container = SVector, names = nothing) where {V<:AbstractVector}
     n = length(v[1])
     t = eltype(v[1])
     for p in v
@@ -91,7 +99,7 @@ function StateSpaceSet(v::Vector{V}; container = SVector) where {V<:AbstractVect
     else
         u = v
     end
-    return StateSpaceSet{n,t,U}(u)
+    return StateSpaceSet{n,t,U,typeof(names)}(u, names)
 end
 
 # Concatenating existing state space sets
@@ -102,14 +110,14 @@ end
 ###########################################################################
 # StateSpaceSet(Vectors of stuff)
 ###########################################################################
-function StateSpaceSet(vecs::AbstractVector{T}...; container = SVector) where {T}
+function StateSpaceSet(vecs::AbstractVector{T}...; container = SVector, names = nothing) where {T}
     data = _ssset(vecs...)
     if container != SVector
         data = container.(data)
     end
     D = length(vecs)
     V = typeof(data[1])
-    return StateSpaceSet{D,T,V}(data)
+    return StateSpaceSet{D,T,V,typeof(names)}(data, names)
 end
 
 @generated function _ssset(vecs::AbstractVector{T}...) where {T}
@@ -144,7 +152,7 @@ function Base.Matrix{S}(d::AbstractStateSpaceSet{D,T}) where {S, D, T}
 end
 Base.Matrix(d::AbstractStateSpaceSet{D,T}) where {D, T} = Matrix{T}(d)
 
-function StateSpaceSet(mat::AbstractMatrix{T}; warn = true, container = SVector) where {T}
+function StateSpaceSet(mat::AbstractMatrix{T}; warn = true, container = SVector, names = nothing) where {T}
     N, D = size(mat)
     warn && D > 100 && @warn "You are attempting to make a StateSpaceSet of dimensions > 100"
     warn && D > N && @warn "You are attempting to make a StateSpaceSet of a matrix with more columns than rows."
@@ -156,7 +164,7 @@ function StateSpaceSet(mat::AbstractMatrix{T}; warn = true, container = SVector)
         V = Vector{T}
     end
     data = [V(row) for row in eachrow(mat)]
-    StateSpaceSet{D,T}(data)
+    StateSpaceSet{D,T,V,typeof(names)}(data, names)
 end
 
 ###########################################################################
