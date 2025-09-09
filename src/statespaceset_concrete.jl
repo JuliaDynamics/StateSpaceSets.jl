@@ -25,8 +25,12 @@ Constructing a `StateSpaceSet` is done in three ways:
 2. By giving in a matrix whose rows are the state space points: `StateSpaceSet(m)`.
 3. By giving in directly a vector of vectors (state space points): `StateSpaceSet(v_of_v)`.
 
-All constructors allow for the keyword `container` which sets the type of `V` (the type of inner vectors).
-At the moment options are only `SVector`, `MVector`, or `Vector`, and by default `SVector` is used.
+All constructors allow for two keywords:
+- `container` which sets the type of `V` (the type of inner vectors).
+  At the moment options are only `SVector`, `MVector`, or `Vector`, and by default `SVector` is used.
+- `names` which can be an iterable of length `D` whose elements are `Symbol`s.
+  This allows assigning a name to each dimension and accessing the dimension by name,
+  see below.
 
 ## Description of indexing
 
@@ -44,6 +48,11 @@ and for performance benefits make `v2` an `SVector{Int}`).
 * `X[v1, v2], X[:, v2]` returns a `StateSpaceSet` with the appropriate entries (first indices
   being "time"/point index, while second being variables)
 * `X[i, j]` value of the `j`th variable, at the `i`th timepoint
+
+In all examples above, `j` can also be a `Symbol`, provided that `names` has been
+given when creating the state space set. This allows accessing a dimension by name.
+This is provided as a convenience and it is not an optimized operation, hence
+recommended to be used primarily with `X[:, j::Symbol]`.
 
 Use `Matrix(ssset)` or `StateSpaceSet(matrix)` to convert. It is assumed
 that each *column* of the `matrix` is one variable.
