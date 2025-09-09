@@ -1,5 +1,9 @@
 Changelog for StateSpaceSets.jl is kept w.r.t. version 1.3
 
+# 2.5
+
+- `StateSpaceSet`s can now have their dimensions named and use those names to access the dimensions. See the docstring of `StateSpaceSet` and the `names` keyword.
+
 # 2.4
 
 - Containers in `setsofsets_distances` can now be both empty. They must be concretely typed.
