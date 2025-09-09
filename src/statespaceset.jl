@@ -151,9 +151,6 @@ end
 function Base.summary(d::AbstractStateSpaceSet{D, T}) where {D, T}
     N = length(d)
     s = "$D-dimensional $(nameof(typeof(d))){$(T)} with $N points"
-    if !isnothing(d.names)
-        s *= "\nand named dimensions: $(join(d.names, ", "))"
-    end
     return s
 end
 
@@ -169,7 +166,12 @@ function matstring(d::AbstractStateSpaceSet{D, T}) where {D, T}
     end
     s = sprint(io -> show(IOContext(io, :limit=>true), MIME"text/plain"(), mat))
     s = join(split(s, '\n')[2:end], '\n')
-    tos = summary(d)*"\n"*s
+    if !isnothing(d.names)
+        e = "\nand named dimensions: $(join(d.names, ", "))"
+    else
+        e = ""
+    end
+    tos = summary(d)*e*"\n"*s
     return tos
 end
 

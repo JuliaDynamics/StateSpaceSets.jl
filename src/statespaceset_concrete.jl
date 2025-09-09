@@ -180,20 +180,21 @@ or the `@view` macro on a statespaceset instance. A `SubStateSpaceSet` is an `Ab
 of the same type as its parent, so indexing, iteration, and most other functions
 can be expected to work in the same way for both the parent and the view.
 """
-struct SubStateSpaceSet{D, T, V, N, P<:AbstractStateSpaceSet{D,T,V,N}, S<:SubArray{V,1}} <: AbstractStateSpaceSet{D,T,V,N}
+struct SubStateSpaceSet{D, T, V, N, P, S<:SubArray{V,1}} <: AbstractStateSpaceSet{D,T,V,N}
     parent::P
     data::S
-    function SubStateSpaceSet(par, data)
-        @assert parent(data) === par.data
-        P = typeof(par)
-        S = typeof(data)
-        SV = eltype(P)
-        T = eltype(SV)
-        D = length(SV)
-        V = containertype(par)
-        N = eltype(par.names)
-        new{D,T,V,N,P,S}(par, data)
-    end
+    names::N
+end
+function SubStateSpaceSet(par, data)
+    @assert parent(data) === par.data
+    P = typeof(par)
+    S = typeof(data)
+    SV = eltype(P)
+    T = eltype(SV)
+    D = length(SV)
+    V = containertype(par)
+    N = eltype(par.names)
+    SubStateSpaceSet{D,T,V,N,P,S}(par, data, par.names)
 end
 
 function Base.summary(sd::SubStateSpaceSet{D, T}) where {D, T}
@@ -202,7 +203,7 @@ function Base.summary(sd::SubStateSpaceSet{D, T}) where {D, T}
 end
 
 Base.parent(sd::SubStateSpaceSet) = sd.parent
-Base.parentindices(sd::SubStateSpaceSet) = parentindices(sd.data)
+Base.parentindices(sd::SubStateSpaceSet) = parentindices(vec(sd))
 
 """
     view(d::StateSpaceSet, indices)
@@ -210,7 +211,7 @@ Base.parentindices(sd::SubStateSpaceSet) = parentindices(sd.data)
 Return a view into the parent dataset `d`, as a [`SubStateSpaceSet`](@ref)
 that contains the datapoints of `d` referred to by `indices`.
 """
-Base.view(d::AbstractStateSpaceSet, i) = SubStateSpaceSet(d, view(d.data, i))
+Base.view(d::AbstractStateSpaceSet, i) = SubStateSpaceSet(d, view(vec(d), i))
 
 function Base.view(::AbstractStateSpaceSet, ::Any, ::Any, ::Vararg)
     throw(ArgumentError("StateSpaceSet views only accept indices on one dimension"))
