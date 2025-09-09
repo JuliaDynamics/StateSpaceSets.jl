@@ -7,16 +7,16 @@ export SVector, SMatrix, MVector
 export minmaxima, columns, standardize, dimension
 export cov, cor, mean_and_cov
 
-# D = dimension, T = element type, V = container type
+# D = dimension, T = element type, V = container type, N = names
 # note that the container type is given as keyword `container` to
 # all functions that somehow end up making a state space set.
-abstract type AbstractStateSpaceSet{D, T, V} <: AbstractVector{V} end
+abstract type AbstractStateSpaceSet{D, T, V, N} <: AbstractVector{V} end
 
 # Core extensions and functions:
 """
     dimension(thing) -> D
 
-Return the dimension of the `thing`, in the sense of state-space dimensionality.
+Return the dimension of the `thing`, in the sense of state space dimensionality.
 """
 dimension(::AbstractStateSpaceSet{D}) where {D} = D
 Base.vec(X::AbstractStateSpaceSet) = X.data
@@ -32,7 +32,7 @@ for f in (
 end
 
 Base.:(==)(d1::AbstractStateSpaceSet, d2::AbstractStateSpaceSet) = vec(d1) == vec(d2)
-Base.copy(d::AbstractStateSpaceSet) = typeof(d)(copy(vec(d)))
+Base.copy(d::AbstractStateSpaceSet) = StateSpaceSet(copy(vec(d)); names = d.names)
 Base.sort(d::AbstractStateSpaceSet) = sort!(copy(d))
 @inline Base.eltype(::Type{<:AbstractStateSpaceSet{D, T, V}}) where {D, T, V} = V
 @inline Base.IteratorSize(::Type{<:AbstractStateSpaceSet}) = Base.HasLength()
@@ -82,6 +82,22 @@ function Base.dotview(d::AbstractStateSpaceSet, ::Colon, ::Int)
     error("`setindex!` is not defined for StateSpaceSets and the given arguments. "*
     "Best to create a new dataset or `Vector{SVector}` instead of in-place operations.")
 end
+
+###########################################################################
+# Named dimensions
+###########################################################################
+Base.getindex(d::AbstractStateSpaceSet, i, s::Symbol) = d[i, name2idx(d.names, s)]
+function name2idx(names, s)
+    if isnothing(names)
+        error("The state space set does not have names.")
+    end
+    j = findfirst(isequal(s), names)
+    if isnothing(j)
+        error("Name $(s) does not exist in names $(names)")
+    end
+    return j
+end
+
 
 ###########################################################################
 # Appending/concatenating
@@ -134,7 +150,8 @@ end
 #####################################################################################
 function Base.summary(d::AbstractStateSpaceSet{D, T}) where {D, T}
     N = length(d)
-    return "$D-dimensional $(nameof(typeof(d))){$(T)} with $N points"
+    s = "$D-dimensional $(nameof(typeof(d))){$(T)} with $N points"
+    return s
 end
 
 function matstring(d::AbstractStateSpaceSet{D, T}) where {D, T}
@@ -149,7 +166,12 @@ function matstring(d::AbstractStateSpaceSet{D, T}) where {D, T}
     end
     s = sprint(io -> show(IOContext(io, :limit=>true), MIME"text/plain"(), mat))
     s = join(split(s, '\n')[2:end], '\n')
-    tos = summary(d)*"\n"*s
+    if !isnothing(d.names)
+        e = "\nand named dimensions: $(join(d.names, ", "))"
+    else
+        e = ""
+    end
+    tos = summary(d)*e*"\n"*s
     return tos
 end
 

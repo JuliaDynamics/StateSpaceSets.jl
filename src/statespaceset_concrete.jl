@@ -25,8 +25,13 @@ Constructing a `StateSpaceSet` is done in three ways:
 2. By giving in a matrix whose rows are the state space points: `StateSpaceSet(m)`.
 3. By giving in directly a vector of vectors (state space points): `StateSpaceSet(v_of_v)`.
 
-All constructors allow for the keyword `container` which sets the type of `V` (the type of inner vectors).
-At the moment options are only `SVector`, `MVector`, or `Vector`, and by default `SVector` is used.
+All constructors allow for two keywords:
+- `container` which sets the type of `V` (the type of inner vectors).
+  At the moment options are only `SVector`, `MVector`, or `Vector`, and by default `SVector` is used.
+- `names` which can be an iterable of length `D` whose elements are `Symbol`s.
+  This allows assigning a name to each dimension and accessing the dimension by name,
+  see below. `names` is `nothing` if not given. Use `StateSpaceSet(s; names)` to add
+  names to an existing set `s`.
 
 ## Description of indexing
 
@@ -45,24 +50,38 @@ and for performance benefits make `v2` an `SVector{Int}`).
   being "time"/point index, while second being variables)
 * `X[i, j]` value of the `j`th variable, at the `i`th timepoint
 
+In all examples above, `j` can also be a `Symbol`, provided that `names` has been
+given when creating the state space set. This allows accessing a dimension by name.
+This is provided as a convenience and it is not an optimized operation, hence
+recommended to be used primarily with `X[:, j::Symbol]`.
+
 Use `Matrix(ssset)` or `StateSpaceSet(matrix)` to convert. It is assumed
 that each *column* of the `matrix` is one variable.
 If you have various timeseries vectors `x, y, z, ...` pass them like
 `StateSpaceSet(x, y, z, ...)`. You can use `columns(dataset)` to obtain the reverse,
 i.e. all columns of the dataset in a tuple.
 """
-struct StateSpaceSet{D, T, V<:AbstractVector} <: AbstractStateSpaceSet{D,T,V}
+struct StateSpaceSet{D, T, V<:AbstractVector, N} <: AbstractStateSpaceSet{D,T,V,N}
     data::Vector{V}
+    names::N
+    function StateSpaceSet{D, T, V, N}(data, names) where {D,T,V,N}
+        if !isnothing(names)
+            if length(names) != D
+                error("Given names must be as many as the dimension of the set!")
+            end
+        end
+        return new{D, T, V, N}(data, names)
+    end
 end
 const SSSet = StateSpaceSet # alias
 # Empty dataset:
-StateSpaceSet{D, T}() where {D,T} = StateSpaceSet{D,T,SVector{D,T}}(SVector{D,T}[])
+StateSpaceSet{D, T}(; names = nothing) where {D,T} = StateSpaceSet{D,T,SVector{D,T},typeof(names)}(SVector{D,T}[], names)
 
 # Identity constructor:
 StateSpaceSet{D, T}(s::StateSpaceSet{D, T}) where {D,T} = s
-StateSpaceSet(s::StateSpaceSet) = s
-StateSpaceSet{D,T}(v::Vector{V}) where {D,T,V<:AbstractVector} = StateSpaceSet{D,T,V}(v)
-function StateSpaceSet(v::Vector{V}; container = SVector) where {V<:AbstractVector}
+StateSpaceSet(s::StateSpaceSet; names = nothing) = StateSpaceSet(vec(s); names)
+
+function StateSpaceSet(v::Vector{V}; container = SVector, names = nothing) where {V<:AbstractVector}
     n = length(v[1])
     t = eltype(v[1])
     for p in v
@@ -82,7 +101,7 @@ function StateSpaceSet(v::Vector{V}; container = SVector) where {V<:AbstractVect
     else
         u = v
     end
-    return StateSpaceSet{n,t,U}(u)
+    return StateSpaceSet{n,t,U,typeof(names)}(u, names)
 end
 
 # Concatenating existing state space sets
@@ -93,14 +112,14 @@ end
 ###########################################################################
 # StateSpaceSet(Vectors of stuff)
 ###########################################################################
-function StateSpaceSet(vecs::AbstractVector{T}...; container = SVector) where {T}
+function StateSpaceSet(vecs::AbstractVector{T}...; container = SVector, names = nothing) where {T}
     data = _ssset(vecs...)
     if container != SVector
         data = container.(data)
     end
     D = length(vecs)
     V = typeof(data[1])
-    return StateSpaceSet{D,T,V}(data)
+    return StateSpaceSet{D,T,V,typeof(names)}(data, names)
 end
 
 @generated function _ssset(vecs::AbstractVector{T}...) where {T}
@@ -135,7 +154,7 @@ function Base.Matrix{S}(d::AbstractStateSpaceSet{D,T}) where {S, D, T}
 end
 Base.Matrix(d::AbstractStateSpaceSet{D,T}) where {D, T} = Matrix{T}(d)
 
-function StateSpaceSet(mat::AbstractMatrix{T}; warn = true, container = SVector) where {T}
+function StateSpaceSet(mat::AbstractMatrix{T}; warn = true, container = SVector, names = nothing) where {T}
     N, D = size(mat)
     warn && D > 100 && @warn "You are attempting to make a StateSpaceSet of dimensions > 100"
     warn && D > N && @warn "You are attempting to make a StateSpaceSet of a matrix with more columns than rows."
@@ -147,7 +166,7 @@ function StateSpaceSet(mat::AbstractMatrix{T}; warn = true, container = SVector)
         V = Vector{T}
     end
     data = [V(row) for row in eachrow(mat)]
-    StateSpaceSet{D,T}(data)
+    StateSpaceSet{D,T,V,typeof(names)}(data, names)
 end
 
 ###########################################################################
@@ -161,19 +180,21 @@ or the `@view` macro on a statespaceset instance. A `SubStateSpaceSet` is an `Ab
 of the same type as its parent, so indexing, iteration, and most other functions
 can be expected to work in the same way for both the parent and the view.
 """
-struct SubStateSpaceSet{D, T, V, P<:AbstractStateSpaceSet{D,T,V}, S<:SubArray{V,1}} <: AbstractStateSpaceSet{D,T,V}
+struct SubStateSpaceSet{D, T, V, N, P, S<:SubArray{V,1}} <: AbstractStateSpaceSet{D,T,V,N}
     parent::P
     data::S
-    function SubStateSpaceSet(par, data)
-        @assert parent(data) === par.data
-        P = typeof(par)
-        S = typeof(data)
-        SV = eltype(P)
-        T = eltype(SV)
-        D = length(SV)
-        V = containertype(par)
-        new{D,T,V,P,S}(par, data)
-    end
+    names::N
+end
+function SubStateSpaceSet(par, data)
+    @assert parent(data) === par.data
+    P = typeof(par)
+    S = typeof(data)
+    SV = eltype(P)
+    T = eltype(SV)
+    D = length(SV)
+    V = containertype(par)
+    N = eltype(par.names)
+    SubStateSpaceSet{D,T,V,N,P,S}(par, data, par.names)
 end
 
 function Base.summary(sd::SubStateSpaceSet{D, T}) where {D, T}
@@ -182,7 +203,7 @@ function Base.summary(sd::SubStateSpaceSet{D, T}) where {D, T}
 end
 
 Base.parent(sd::SubStateSpaceSet) = sd.parent
-Base.parentindices(sd::SubStateSpaceSet) = parentindices(sd.data)
+Base.parentindices(sd::SubStateSpaceSet) = parentindices(vec(sd))
 
 """
     view(d::StateSpaceSet, indices)
@@ -190,7 +211,7 @@ Base.parentindices(sd::SubStateSpaceSet) = parentindices(sd.data)
 Return a view into the parent dataset `d`, as a [`SubStateSpaceSet`](@ref)
 that contains the datapoints of `d` referred to by `indices`.
 """
-Base.view(d::AbstractStateSpaceSet, i) = SubStateSpaceSet(d, view(d.data, i))
+Base.view(d::AbstractStateSpaceSet, i) = SubStateSpaceSet(d, view(vec(d), i))
 
 function Base.view(::AbstractStateSpaceSet, ::Any, ::Any, ::Vararg)
     throw(ArgumentError("StateSpaceSet views only accept indices on one dimension"))
