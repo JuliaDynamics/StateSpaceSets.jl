@@ -163,3 +163,32 @@ end
   u = hcat(1:3, ones(3))
   @test size(u) == (3, 2)
 end
+
+
+
+@testset "Named dimensions" begin
+
+  names = [:x, :y]
+
+  x = rand(10)
+  y = rand(10)
+  z = hcat(x, y)
+  w = [z[i, :] for i in 1:10]
+
+  s1 = StateSpaceSet(x, y; names)
+  s2 = StateSpaceSet(z; names)
+  s3 = StateSpaceSet(w; names)
+  s4 = StateSpaceSet(z)
+
+  for s in (s1, s2, s3)
+    @test s[:, :x] == x
+    @test s[:, :y] == y
+    @test s[1, :x] == x[1]
+    @test_throws "lala" s[:, :lala]
+  end
+
+  @test_throws "must be as many" StateSpaceSet(z; names = [:x, :y, :z])
+  @test_throws "does not have names" s4[:, :x]
+
+end
+

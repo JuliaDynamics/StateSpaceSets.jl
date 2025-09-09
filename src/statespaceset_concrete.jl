@@ -30,7 +30,7 @@ All constructors allow for two keywords:
   At the moment options are only `SVector`, `MVector`, or `Vector`, and by default `SVector` is used.
 - `names` which can be an iterable of length `D` whose elements are `Symbol`s.
   This allows assigning a name to each dimension and accessing the dimension by name,
-  see below.
+  see below. `names` is `nothing` if not given.
 
 ## Description of indexing
 
@@ -63,7 +63,7 @@ i.e. all columns of the dataset in a tuple.
 struct StateSpaceSet{D, T, V<:AbstractVector, N} <: AbstractStateSpaceSet{D,T,V,N}
     data::Vector{V}
     names::N
-    function StateSpaceSet{D, T, V, N}(data, names)
+    function StateSpaceSet{D, T, V, N}(data, names) where {D,T,V,N}
         if !isnothing(names)
             if length(names) != D
                 error("Given names must be as many as the dimension of the set!")
@@ -74,7 +74,7 @@ struct StateSpaceSet{D, T, V<:AbstractVector, N} <: AbstractStateSpaceSet{D,T,V,
 end
 const SSSet = StateSpaceSet # alias
 # Empty dataset:
-StateSpaceSet{D, T}() where {D,T} = StateSpaceSet{D,T,SVector{D,T}}(SVector{D,T}[])
+StateSpaceSet{D, T}(; names = nothing) where {D,T} = StateSpaceSet{D,T,SVector{D,T},typeof(names)}(SVector{D,T}[], names)
 
 # Identity constructor:
 StateSpaceSet{D, T}(s::StateSpaceSet{D, T}) where {D,T} = s
@@ -178,7 +178,7 @@ or the `@view` macro on a statespaceset instance. A `SubStateSpaceSet` is an `Ab
 of the same type as its parent, so indexing, iteration, and most other functions
 can be expected to work in the same way for both the parent and the view.
 """
-struct SubStateSpaceSet{D, T, V, P<:AbstractStateSpaceSet{D,T,V}, S<:SubArray{V,1}} <: AbstractStateSpaceSet{D,T,V}
+struct SubStateSpaceSet{D, T, V, N, P<:AbstractStateSpaceSet{D,T,V,N}, S<:SubArray{V,1}} <: AbstractStateSpaceSet{D,T,V,N}
     parent::P
     data::S
     function SubStateSpaceSet(par, data)
@@ -189,7 +189,8 @@ struct SubStateSpaceSet{D, T, V, P<:AbstractStateSpaceSet{D,T,V}, S<:SubArray{V,
         T = eltype(SV)
         D = length(SV)
         V = containertype(par)
-        new{D,T,V,P,S}(par, data)
+        N = eltype(parent.names)
+        new{D,T,V,N,P,S}(par, data)
     end
 end
 
