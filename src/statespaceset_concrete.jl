@@ -76,6 +76,7 @@ end
 const SSSet = StateSpaceSet # alias
 # Empty dataset:
 StateSpaceSet{D, T}(; names = nothing) where {D,T} = StateSpaceSet{D,T,SVector{D,T},typeof(names)}(SVector{D,T}[], names)
+StateSpaceSet{D, T}(v; names = nothing) where {D,T} = StateSpaceSet{D,T,SVector{D,T},typeof(names)}(v, names)
 
 # Identity constructor:
 StateSpaceSet{D, T}(s::StateSpaceSet{D, T}) where {D,T} = s

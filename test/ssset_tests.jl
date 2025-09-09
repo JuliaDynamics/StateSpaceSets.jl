@@ -40,6 +40,11 @@ s = StateSpaceSet(o)
     @test dimension(ss) == 2
     @test eltype(eltype(ss)) == String
   end
+
+  @testset "embed downstream #41" begin
+    X = StateSpaceSet{3, Float64}([rand(3) for _ in 1:3])
+    @test X isa StateSpaceSet
+  end
 end
 
 
