@@ -30,7 +30,8 @@ All constructors allow for two keywords:
   At the moment options are only `SVector`, `MVector`, or `Vector`, and by default `SVector` is used.
 - `names` which can be an iterable of length `D` whose elements are `Symbol`s.
   This allows assigning a name to each dimension and accessing the dimension by name,
-  see below. `names` is `nothing` if not given.
+  see below. `names` is `nothing` if not given. Use `StateSpaceSet(s; names)` to add
+  names to an existing set `s`.
 
 ## Description of indexing
 
@@ -78,7 +79,8 @@ StateSpaceSet{D, T}(; names = nothing) where {D,T} = StateSpaceSet{D,T,SVector{D
 
 # Identity constructor:
 StateSpaceSet{D, T}(s::StateSpaceSet{D, T}) where {D,T} = s
-StateSpaceSet(s::StateSpaceSet) = s
+StateSpaceSet(s::StateSpaceSet; names = nothing) = StateSpaceSet(vec(s); names)
+
 function StateSpaceSet(v::Vector{V}; container = SVector, names = nothing) where {V<:AbstractVector}
     n = length(v[1])
     t = eltype(v[1])

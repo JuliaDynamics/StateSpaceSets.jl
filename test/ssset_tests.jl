@@ -190,5 +190,8 @@ end
   @test_throws "must be as many" StateSpaceSet(z; names = [:x, :y, :z])
   @test_throws "does not have names" s4[:, :x]
 
+  s4 = StateSpaceSet(s4; names = [:x, :y])
+  @test s4[:, :x] == x
+
 end
 
