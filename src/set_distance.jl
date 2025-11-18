@@ -121,7 +121,7 @@ function set_distance_tree(d1, tree::KDTree, comparison = <)
     dist, idx = [ε], [0]
     for p in d1 # iterate over all points of set
         Neighborhood.NearestNeighbors.knn_point!(
-            tree, p, false, dist, idx, Neighborhood.NearestNeighbors.always_false
+            tree, p, false, dist, idx, Returns(false)
         )
         @inbounds comparison(dist[1], ε) && (ε = dist[1])
     end
