@@ -64,7 +64,7 @@ i.e. all columns of the dataset in a tuple.
 struct StateSpaceSet{D, T, V<:AbstractVector, N} <: AbstractStateSpaceSet{D,T,V,N}
     data::Vector{V}
     names::N
-    function StateSpaceSet{D, T, V, N}(data, names) where {D,T,V,N}
+    function StateSpaceSet{D, T, V, N}(data, names = nothing) where {D,T,V,N}
         if !isnothing(names)
             if length(names) != D
                 error("Given names must be as many as the dimension of the set!")
@@ -76,7 +76,7 @@ end
 const SSSet = StateSpaceSet # alias
 # Empty dataset:
 StateSpaceSet{D, T}(; names = nothing) where {D,T} = StateSpaceSet{D,T,SVector{D,T},typeof(names)}(SVector{D,T}[], names)
-StateSpaceSet{D,T}(v::Vector{V}; names = nothing) where {D,T,V} = StateSpaceSet{D,T,V,typeof(names)}(v, names)
+StateSpaceSet{D, T}(v::Vector{V}; names = nothing) where {D,T,V} = StateSpaceSet{D,T,V,typeof(names)}(v, names)
 
 # Identity constructor:
 StateSpaceSet{D, T}(s::StateSpaceSet{D, T}) where {D,T} = s
