@@ -70,13 +70,18 @@ struct StateSpaceSet{D, T, V<:AbstractVector, N} <: AbstractStateSpaceSet{D,T,V,
                 error("Given names must be as many as the dimension of the set!")
             end
         end
+        if eltype(data) ≠ V
+            data = V.(data)
+        end
         return new{D, T, V, N}(data, names)
     end
 end
 const SSSet = StateSpaceSet # alias
 # Empty dataset:
 StateSpaceSet{D, T}(; names = nothing) where {D,T} = StateSpaceSet{D,T,SVector{D,T},typeof(names)}(SVector{D,T}[], names)
+# Convenience constructors
 StateSpaceSet{D, T}(v::Vector{V}; names = nothing) where {D,T,V} = StateSpaceSet{D,T,V,typeof(names)}(v, names)
+StateSpaceSet{D, T, V}(v::Vector{U}; names = nothing) where {D,T,V,U} = StateSpaceSet{D,T,V,typeof(names)}(V.(v), names)
 
 # Identity constructor:
 StateSpaceSet{D, T}(s::StateSpaceSet{D, T}) where {D,T} = s
